@@ -1,0 +1,174 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f2e8c9d4a1b46b8a5d3e6f7012c9b44, type: 3}
+  m_Name: CampaignLevel01_Forest
+  m_EditorClassIdentifier:
+  levelId: 1
+  title: NIVEL 1 - BOSQUE
+  objective: Llave y bandera
+  artTheme: forest
+  playerStart: {x: -28, y: 2.2, z: 0}
+  corridorHalfWidth: 18
+  backgroundColor: {r: 0.36, g: 0.58, b: 0.78, a: 1}
+  ambientLightColor: {r: 0.78, g: 0.9, b: 0.98, a: 1}
+  fogDensity: 0.007
+  keyLightEnergy: 1.35
+  fillLightEnergy: 0.56
+  fillLightColor: {r: 0.45, g: 0.78, b: 0.48, a: 1}
+  cameraDistance: 8.6
+  cameraMaximumDistance: 12
+  cameraHeight: 3.25
+  cameraShoulderOffset: 0.45
+  cameraLookAheadDistance: 1.4
+  lava: []
+  platforms:
+  - position: {x: -28, y: 0.35, z: 0}
+    size: {x: 16, y: 1, z: 13}
+    color: {r: 0.22, g: 0.43, b: 0.19, a: 1}
+  - position: {x: -17.5, y: 0.55, z: 0}
+    size: {x: 6, y: 0.85, z: 5.5}
+    color: {r: 0.28, g: 0.49, b: 0.21, a: 1}
+  - position: {x: -11.5, y: 0.8, z: 0}
+    size: {x: 5.2, y: 0.8, z: 5.2}
+    color: {r: 0.3, g: 0.5, b: 0.22, a: 1}
+  - position: {x: 1.5, y: 1, z: 0}
+    size: {x: 8, y: 0.9, z: 7}
+    color: {r: 0.31, g: 0.52, b: 0.23, a: 1}
+  - position: {x: 9, y: 1.25, z: 3.2}
+    size: {x: 5.6, y: 0.85, z: 5.2}
+    color: {r: 0.32, g: 0.53, b: 0.24, a: 1}
+  - position: {x: 16, y: 1.45, z: -2.8}
+    size: {x: 6.2, y: 0.9, z: 5.8}
+    color: {r: 0.32, g: 0.5, b: 0.22, a: 1}
+  - position: {x: 24, y: 1.65, z: 0}
+    size: {x: 8.5, y: 1, z: 7}
+    color: {r: 0.28, g: 0.46, b: 0.2, a: 1}
+  - position: {x: 45, y: 2.1, z: 0}
+    size: {x: 8, y: 1, z: 7}
+    color: {r: 0.3, g: 0.47, b: 0.21, a: 1}
+  - position: {x: 70, y: 2.65, z: 0}
+    size: {x: 8.5, y: 1, z: 7.5}
+    color: {r: 0.33, g: 0.51, b: 0.23, a: 1}
+  - position: {x: 90, y: 3, z: 0}
+    size: {x: 12, y: 1, z: 10}
+    color: {r: 0.24, g: 0.4, b: 0.18, a: 1}
+  forestIslandBases:
+  - position: {x: -28, y: -1, z: 0}
+    size: {x: 14, y: 2.8, z: 11}
+    variant: 0
+  - position: {x: -17.5, y: -0.75, z: 0}
+    size: {x: 5.2, y: 2.5, z: 4.8}
+    variant: 1
+  - position: {x: -11.5, y: -0.48, z: 0}
+    size: {x: 4.4, y: 2.5, z: 4.4}
+    variant: 2
+  - position: {x: 1.5, y: -0.35, z: 0}
+    size: {x: 7, y: 2.7, z: 6.1}
+    variant: 1
+  - position: {x: 9, y: -0.05, z: 3.2}
+    size: {x: 4.8, y: 2.55, z: 4.4}
+    variant: 2
+  - position: {x: 16, y: 0.08, z: -2.8}
+    size: {x: 5.4, y: 2.7, z: 5}
+    variant: 0
+  - position: {x: 24, y: 0.15, z: 0}
+    size: {x: 7.4, y: 3, z: 6}
+    variant: 1
+  - position: {x: 45, y: 0.62, z: 0}
+    size: {x: 7, y: 2.95, z: 6}
+    variant: 2
+  - position: {x: 70, y: 1.12, z: 0}
+    size: {x: 7.5, y: 3, z: 6.4}
+    variant: 0
+  - position: {x: 90, y: 1.35, z: 0}
+    size: {x: 10.8, y: 3.25, z: 8.8}
+    variant: 1
+  bridges:
+  - position: {x: -5.4, y: 0.9, z: 0}
+    size: {x: 5.4, y: 0.42, z: 2.4}
+  - position: {x: 80, y: 2.75, z: 0}
+    size: {x: 6, y: 0.42, z: 2.5}
+  movingPlatforms:
+  - position: {x: 34, y: 1.85, z: -3.6}
+    size: {x: 4.6, y: 0.75, z: 3.4}
+    travel: {x: 0, y: 0, z: 7.2}
+    duration: 2.3
+  fallingPlatforms:
+  - position: {x: 54, y: 2.25, z: 2.8}
+    size: {x: 4, y: 0.7, z: 3.8}
+  - position: {x: 61, y: 2.45, z: -2.2}
+    size: {x: 3.8, y: 0.7, z: 3.6}
+  stairs: []
+  hazards:
+  - position: {x: 16, y: 2.15, z: -2.8}
+    size: {x: 2, y: 1, z: 2}
+    kind: 0
+  - position: {x: 45, y: 2.9, z: -2.6}
+    size: {x: 2.5, y: 1, z: 2}
+    kind: 0
+  pickupLines:
+  - start: {x: -18, y: 2, z: 0}
+    offset: {x: 2.6, y: 0.08, z: 0}
+    count: 4
+    kind: 0
+  - start: {x: 6.8, y: 2.5, z: 2.8}
+    offset: {x: 2.2, y: 0.05, z: -1.2}
+    count: 5
+    kind: 0
+  - start: {x: 33, y: 3.15, z: -3.2}
+    offset: {x: 1.4, y: 0.04, z: 1.6}
+    count: 5
+    kind: 0
+  - start: {x: 54, y: 3.55, z: 2.8}
+    offset: {x: 2, y: 0.05, z: -1.4}
+    count: 4
+    kind: 0
+  - start: {x: 78, y: 4.05, z: 0}
+    offset: {x: 2, y: 0.05, z: 0}
+    count: 4
+    kind: 0
+  pickupArcs:
+  - center: {x: 9, y: 2.7, z: 3.2}
+    width: 2.4
+    count: 4
+    kind: 0
+  - center: {x: 58, y: 3.85, z: 0.4}
+    width: 2.8
+    count: 5
+    kind: 0
+  bonusCaches:
+  - position: {x: 45, y: 3.45, z: 3}
+    theme: forest
+  pickups:
+  - position: {x: 70, y: 4.05, z: -2.6}
+    kind: 2
+  - position: {x: 24, y: 3, z: -2.4}
+    kind: 1
+  checkpoints:
+  - position: {x: 24, y: 3.1, z: 2.8}
+    index: 1
+  - position: {x: 70, y: 4.05, z: 2.9}
+    index: 2
+  enemies:
+  - kind: 0
+    position: {x: 1.5, y: 2.1, z: 0}
+    patrolDistance: 2.8
+  - kind: 0
+    position: {x: 24, y: 2.8, z: 0}
+    patrolDistance: 3.6
+  - kind: 1
+    position: {x: 45, y: 3.2, z: 0}
+    patrolDistance: 4
+  - kind: 1
+    position: {x: 70, y: 3.8, z: 0}
+    patrolDistance: 4.8
+  goalPosition: {x: 90, y: 4.2, z: 0}

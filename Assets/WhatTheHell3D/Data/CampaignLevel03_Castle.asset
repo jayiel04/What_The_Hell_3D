@@ -1,0 +1,154 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f2e8c9d4a1b46b8a5d3e6f7012c9b44, type: 3}
+  m_Name: CampaignLevel03_Castle
+  m_EditorClassIdentifier:
+  levelId: 3
+  title: NIVEL 3 - CASTILLO
+  objective: Guardianes, llave y salida
+  artTheme: castle
+  playerStart: {x: -30, y: 2.2, z: 0}
+  corridorHalfWidth: 15
+  backgroundColor: {r: 0.055, g: 0.055, b: 0.095, a: 1}
+  ambientLightColor: {r: 0.74, g: 0.78, b: 0.96, a: 1}
+  fogDensity: 0.007
+  keyLightEnergy: 1.45
+  fillLightEnergy: 0.42
+  fillLightColor: {r: 0.88, g: 0.38, b: 0.24, a: 1}
+  cameraDistance: 7.8
+  cameraMaximumDistance: 10.8
+  cameraHeight: 3
+  cameraShoulderOffset: 0.32
+  cameraLookAheadDistance: 1.05
+  lava: []
+  platforms:
+  - position: {x: -30, y: 0.35, z: 0}
+    size: {x: 15, y: 1, z: 11}
+    color: {r: 0.27, g: 0.26, b: 0.31, a: 1}
+  - position: {x: -8, y: 3.05, z: 0}
+    size: {x: 8, y: 1, z: 6.5}
+    color: {r: 0.23, g: 0.23, b: 0.28, a: 1}
+  - position: {x: 11, y: 3.35, z: -2.8}
+    size: {x: 7.5, y: 1, z: 6}
+    color: {r: 0.28, g: 0.27, b: 0.32, a: 1}
+  - position: {x: 20, y: 3.65, z: 3.2}
+    size: {x: 6.5, y: 0.9, z: 5.5}
+    color: {r: 0.25, g: 0.24, b: 0.3, a: 1}
+  - position: {x: 41, y: 4.2, z: 0}
+    size: {x: 8, y: 1, z: 7}
+    color: {r: 0.22, g: 0.22, b: 0.27, a: 1}
+  - position: {x: 77, y: 5, z: 0}
+    size: {x: 8, y: 1, z: 7}
+    color: {r: 0.24, g: 0.23, b: 0.29, a: 1}
+  - position: {x: 98, y: 7.35, z: -2.8}
+    size: {x: 7, y: 1, z: 6}
+    color: {r: 0.2, g: 0.2, b: 0.26, a: 1}
+  - position: {x: 119, y: 7.9, z: 0}
+    size: {x: 14, y: 1, z: 11}
+    color: {r: 0.17, g: 0.17, b: 0.22, a: 1}
+  forestIslandBases: []
+  bridges:
+  - position: {x: 1, y: 3.15, z: 0}
+    size: {x: 6, y: 0.42, z: 2.4}
+  - position: {x: 51, y: 4.35, z: 0}
+    size: {x: 6.4, y: 0.42, z: 2.4}
+  movingPlatforms:
+  - position: {x: 30, y: 3.85, z: 0}
+    size: {x: 4.4, y: 0.75, z: 3.4}
+    travel: {x: 0, y: 0, z: 6.5}
+    duration: 1.8
+  - position: {x: 108, y: 7.55, z: 2.6}
+    size: {x: 4.4, y: 0.75, z: 3.4}
+    travel: {x: 0, y: 0, z: -5.2}
+    duration: 1.6
+  fallingPlatforms:
+  - position: {x: 60, y: 4.55, z: -2.8}
+    size: {x: 4, y: 0.7, z: 3.6}
+  - position: {x: 67, y: 4.75, z: 2.6}
+    size: {x: 3.8, y: 0.7, z: 3.5}
+  stairs:
+  - start: {x: -20, y: 0.55, z: 0}
+    count: 6
+    step: 0.42
+  - start: {x: 85, y: 5, z: 0}
+    count: 6
+    step: 0.38
+  hazards:
+  - position: {x: -8, y: 3.8, z: 1.8}
+    size: {x: 2.2, y: 1, z: 2}
+    kind: 0
+  - position: {x: 41, y: 4.95, z: -2.5}
+    size: {x: 2.8, y: 1, z: 2}
+    kind: 1
+  pickupLines:
+  - start: {x: -19, y: 2.5, z: 0}
+    offset: {x: 1.6, y: 0.42, z: 0}
+    count: 5
+    kind: 0
+  - start: {x: 1, y: 4.5, z: 0}
+    offset: {x: 2, y: 0.05, z: 0}
+    count: 5
+    kind: 0
+  - start: {x: 51, y: 5.75, z: 0}
+    offset: {x: 2, y: 0.05, z: 0}
+    count: 5
+    kind: 0
+  - start: {x: 85, y: 6.75, z: 0}
+    offset: {x: 1.5, y: 0.38, z: 0}
+    count: 6
+    kind: 0
+  - start: {x: 108, y: 9, z: 2.4}
+    offset: {x: 1.8, y: 0.05, z: -0.7}
+    count: 5
+    kind: 0
+  pickupArcs:
+  - center: {x: 30, y: 5.25, z: 1.5}
+    width: 2.6
+    count: 5
+    kind: 0
+  - center: {x: 64, y: 6.05, z: 0}
+    width: 2.8
+    count: 5
+    kind: 0
+  bonusCaches:
+  - position: {x: 20, y: 4.85, z: 3.2}
+    theme: castle
+  pickups:
+  - position: {x: 98, y: 8.75, z: -2.8}
+    kind: 2
+  - position: {x: 41, y: 5.55, z: 2.5}
+    kind: 1
+  checkpoints:
+  - position: {x: 11, y: 4.8, z: -2.8}
+    index: 1
+  - position: {x: 77, y: 6.35, z: 2.8}
+    index: 2
+  enemies:
+  - kind: 1
+    position: {x: -8, y: 4.25, z: -1.8}
+    patrolDistance: 3
+  - kind: 0
+    position: {x: 11, y: 4.55, z: -2.8}
+    patrolDistance: 3.6
+  - kind: 1
+    position: {x: 41, y: 5.45, z: 0.5}
+    patrolDistance: 4
+  - kind: 2
+    position: {x: 77, y: 6.2, z: 0}
+    patrolDistance: 4.5
+  - kind: 1
+    position: {x: 119, y: 9.05, z: -2.8}
+    patrolDistance: 5
+  - kind: 2
+    position: {x: 119, y: 9.05, z: 2.8}
+    patrolDistance: 5
+  goalPosition: {x: 119, y: 9.3, z: 0}
