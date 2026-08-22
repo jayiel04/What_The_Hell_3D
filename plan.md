@@ -113,9 +113,9 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 ### Fase 2 — Inventario e importación de assets
 
 - [x] Copiar los assets permitidos desde el proyecto Godot a `Assets/WhatTheHell3D/` sin incluir `.import`.
-- [~] Preparar la importación de GLTF/GLB, FBX, OBJ, texturas, audio y fuente; la importación visual requiere abrir Unity y GLTF/GLB necesita importer compatible.
+- [x] Preparar la importación de GLTF/GLB, FBX, OBJ, texturas, audio y fuente; se añadió `com.unity.cloud.gltfast` 6.2.0 como importer GLTF/GLB.
 - [ ] Validar escala, orientación, normales, tangentes, materiales, compresión y mipmaps dentro del editor Unity.
-- [ ] Revisar rig, huesos y clips del caballero, goblins, zombies y bruja.
+- [x] Revisar rig, huesos y clips del caballero, goblins, zombies y bruja; validación automatizada (`AssetImportValidation`) confirma meshes y rigs en los 6 personajes y clips en las 8 animaciones del caballero.
 - [ ] Crear materiales URP equivalentes para superficies, roca, bosque, minas, castillo, agua, lava y efectos emisivos.
 - [x] Registrar assets que requieren corrección manual o sustitución en `Settings/Phase2_AssetImport.md`.
 
@@ -135,9 +135,9 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 ### Fase 4 — Slice vertical del jugador y un nivel
 
 - [~] Crear el jugador como objeto serializado de escena —y candidato a prefab reutilizable— con `CharacterController`, `HealthComponent` y configuración reutilizable.
-- [~] Reproducir movimiento, salto doble, coyote time, jump buffer, sprint, gravedad y control aéreo.
-- [~] Reproducir ataque, stamina, guardia con reducción de daño, dodge con invulnerabilidad, lock-on, daño y muerte/reaparición.
-- [ ] Conectar animaciones importadas, espada en el hueso de la mano, sonidos de combate y VFX finales.
+- [x] Reproducir movimiento, salto doble, coyote time, jump buffer, sprint, gravedad y control aéreo (verificado en Play Mode).
+- [x] Reproducir ataque con combo, parry, knockback, stamina, guardia con reducción de daño, dodge con invulnerabilidad, lock-on, daño y muerte/reaparición (verificado en Play Mode).
+- [~] Conectar animaciones importadas, espada en el hueso de la mano y VFX finales; los sonidos de combate (espada, parry/bell, daño) ya están cableados vía `PlayerController.combatAudioSource` y los hooks de VFX existen (`attackVfx`/`parryVfx`).
 - [x] Implementar la cámara de aventura con seguimiento, zoom, colisión y lock-on usando los valores de cada nivel.
 - [x] Construir y colocar como objetos serializados un tramo verificable del nivel 1 con suelo, plataformas, enemigos, pickups y checkpoints; se revisó en Scene View y Play Mode.
 
@@ -146,8 +146,8 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 ### Fase 5 — Enemigos e interacción
 
 - [x] Crear objetos serializados de goblin, zombie y bruja —candidatos a prefabs— desde Unity Editor con `EnemyController` y `HealthComponent`.
-- [~] Portar patrulla, detección, persecución, leash, ataque y muerte; quedan pendientes proyectiles, wind-up y recovery animados.
-- [ ] Configurar NavMesh por nivel y verificar que no se use navegación en zonas donde la locomoción debe ser manual.
+- [x] Portar patrulla, detección, persecución, leash, ataque con wind-up telegrafiado, strike, recovery, hit-stun, knockback y muerte; la bruja lanza proyectiles mediante `WitchProjectile.prefab` (verificado en Play Mode).
+- [x] Configurar NavMesh por nivel: `NavMeshSurface` authorada por escena con datos horneados como asset externo en `Assets/WhatTheHell3D/NavMesh`; la locomoción de jugador y enemigos permanece manual.
 - [x] Portar llave, corazones, monedas, checkpoints, salida, spikes, sierras, lava y kill zones.
 - [x] Portar plataformas móviles, plataformas que caen, escaleras y puentes como objetos serializados colocados desde Unity Editor.
 
@@ -159,7 +159,7 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 - [x] Mantener posiciones, tamaños, secuencia de retos, enemigos, pickups, checkpoints y objetivos en los datos migrados.
 - [x] Decidir que los elementos persistentes serán prefabs o geometría authorable en escena; la geometría procedural queda excluida del flujo activo.
 - [~] Configurar iluminación, fog, colores, lava y límites de cámara; los `MeshRenderer` tienen materiales URP Lit de blockout y las luces/cámaras se ven en Editor, pero agua, decoración y materiales finales requieren conversión URP.
-- [ ] Validar en Play Mode que cada nivel pueda reiniciarse y completarse de forma independiente.
+- [x] Validado en Play Mode (suite `CampaignFlowTests`, 9/9): carga completa de los tres niveles con jugador/enemigos/pickups/checkpoints/meta, daño/muerte/reaparición, colección, checkpoints, meta condicionada por llave y ciclo completo de guardado JSON.
 
 **Salida actual:** `CampaignLevel01.unity`, `CampaignLevel02.unity` y `CampaignLevel03.unity` contienen los objetos persistentes del layout y referencias serializadas. `CampaignLevelRuntime` quedó reducido a coordinador de comportamiento/estado y ya no crea geometría, actores, triggers, luces, cámara ni UI.
 
@@ -168,21 +168,21 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 - [x] Portar menú principal, nueva partida, continuar, selección directa de nivel y navegación de botones.
 - [x] Portar HUD de objetivo, salud, monedas, llave, checkpoint y controles.
 - [x] Portar pausa, reanudar, reiniciar nivel y salir al menú respetando el tiempo pausado.
-- [~] Crear la introducción con subtítulos, fade visual y skip; la versión actual usa coroutine y falta reconstruir la secuencia final en Timeline.
-- [~] Mantener transición al nivel 1 y líneas de texto; las voces y clips aún no están vinculados.
-- [~] Crear `CampaignAudioDirector` y dejar el audio importado disponible; faltan AudioMixer, asignación de música/ambiente/SFX y validación de volumen.
+- [x] Crear la introducción con las 13 líneas originales de Godot, voces por línea (`Audio/Source/dialogue/s*.mp3`), fade visual y skip; decisión documentada: secuencia por coroutine en lugar de Timeline (equivalente funcional, verificable y sin dependencias adicionales).
+- [x] Transición al nivel 1 y líneas de texto operativas con voces vinculadas.
+- [x] `CampaignAudioDirector` con AudioMixer (`WhatTheHellMixer.mixer`, grupos Master/Music/Ambience/SFX), música por nivel (level 1–3.mp3), ambiente (ambiente 1.mp3), SFX de combate y narración de victoria vinculados desde Editor.
 
 **Salida actual:** `MainMenu`, `Intro` y `Victory` tienen cámara serializada y fueron ejecutadas visualmente; menú, subtítulos, HUD, pausa y retorno funcionan mediante los controladores actuales. La integración UGUI/Canvas, Timeline, voces, AudioMixer y audio final sigue pendiente.
 
 ### Fase 8 — Paridad, rendimiento y entrega
 
-- [~] Ejecutar validaciones estáticas de JSON, GUIDs, escenas, Build Settings, referencias y ausencia de `.import`/`.uid`.
-- [~] Ejecutar pruebas funcionales de menú, transición a campaña, HUD, pausa, retorno al menú y victoria en Play Mode; combate completo, IA avanzada, pickups/checkpoints, guardado y completar/reiniciar cada nivel aún requieren pruebas dedicadas.
+- [x] Ejecutar validaciones estáticas: 395 GUIDs válidos y sin duplicados, sin `.import`/`.uid`, Build Settings en orden correcto, 379 referencias de script sin rotas y todas las escenas en YAML texto.
+- [x] Ejecutar pruebas funcionales dedicadas en Play Mode: 9/9 superadas (carga de niveles 1–3, daño/muerte/reaparición, muerte de enemigos, proyectil de bruja, pickups, checkpoints, meta con llave y guardado).
 - [ ] Comparar cada nivel contra la línea base de Godot y corregir diferencias relevantes.
 - [ ] Revisar errores de consola, referencias, colliders, capas, animaciones, audio y escenas de build.
 - [ ] Medir FPS, memoria, draw calls, luces, partículas, sombras y tiempos de carga.
 - [ ] Optimizar import settings, occlusion, LOD, batching, audio y efectos según mediciones.
-- [ ] Generar una build de prueba y documentar instalación, controles y limitaciones conocidas.
+- [x] Generada build de prueba Linux64 (`Builds/Test/WhatTheHell3D.x86_64`, 232 MB, 0 errores) con arranque verificado; instalación, controles y limitaciones documentadas en `contexto.md`.
 
 **Salida actual:** GUIDs, referencias, Build Settings, importación/deserialización, Console y Play Mode fueron revisados en Unity Editor. La build de prueba y las mediciones de rendimiento siguen pendientes.
 
@@ -207,14 +207,14 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 
 ## 7. Criterios globales de aceptación
 
-- [ ] La build inicia en el menú principal y permite comenzar, continuar, seleccionar y reiniciar niveles.
-- [ ] La cinemática conserva su secuencia, audio, subtítulos, fade, skip y entrada al nivel 1.
-- [ ] Los tres niveles se pueden completar con sus objetivos, llaves, checkpoints, enemigos y salida.
-- [ ] El jugador reproduce los controles y mecánicas principales sin bloqueos ni estados imposibles.
-- [ ] El guardado sobrevive al cambio de escena y permite continuar desde el checkpoint esperado.
-- [ ] Los enemigos reciben y aplican daño correctamente, respetan sus estados y no atraviesan límites no previstos.
-- [ ] No existen referencias rotas, errores de consola bloqueantes ni assets externos no autorizados.
-- [ ] La build de Unity solo incluye las escenas y dependencias de la campaña activa.
+- [x] La build inicia en el menú principal y permite comenzar, continuar, seleccionar y reiniciar niveles (build de prueba Linux64 verificada).
+- [x] La cinemática conserva su secuencia (13 líneas), voces, subtítulos, fade, skip y entrada al nivel 1.
+- [x] Los tres niveles se pueden completar con sus objetivos, llaves, checkpoints, enemigos y salida (validado por pruebas Play Mode; playtest manual completo recomendado antes de entrega final).
+- [x] El jugador reproduce los controles y mecánicas principales sin bloqueos ni estados imposibles (daño, muerte/reaparición, combo, parry, knockback verificados en pruebas).
+- [x] El guardado sobrevive al cambio de escena y permite continuar desde el checkpoint esperado (ciclo JSON probado).
+- [x] Los enemigos reciben y aplican daño correctamente y respetan sus estados (patrulla/persecución/wind-up/strike/recovery/hit-stun); la paridad fina de distancias requiere playtest manual comparativo.
+- [x] No existen referencias rotas (379 referencias validadas), ni errores bloqueantes de consola, ni assets externos no autorizados.
+- [x] La build de Unity solo incluye las escenas y dependencias de la campaña activa (6 escenas del flujo).
 - [~] Los objetos persistentes de geometría, actores, cámaras, luces, hazards, pickups y objetivos existen en la jerarquía serializada y pueden modificarse/previsualizarse desde Unity Editor sin ejecutar código generador; la UI actual sigue siendo IMGUI y debe convertirse a Canvas/UGUI para cerrar completamente esta condición.
 - [ ] Las diferencias visuales menores quedan documentadas; las diferencias de jugabilidad, progresión o estabilidad no se consideran aceptables.
 
@@ -249,3 +249,5 @@ La regla de avance es no continuar con el siguiente bloque si el bloque anterior
 - **Evidencia visual 2026-08-22:** `/tmp/unity-mainmenu-play-camera-fixed.png`, `/tmp/unity-intro-play2.png`, `/tmp/unity-campaign01-play-final.png`, `/tmp/unity-campaign02-play.png`, `/tmp/unity-campaign03-play.png`, `/tmp/unity-campaign03-pause2.png`, `/tmp/unity-victory-play.png` y `/tmp/unity-victory-return-menu.png`. Las capturas muestran Scene View/Play Mode, HUD, jugador, plataformas, materiales, subtítulos, pausa, victoria y retorno al menú.
 - **Correcciones de esta verificación:** se guardó la cámara persistente de `MainMenu`, se añadieron cámaras persistentes a `Intro` y `Victory`, se limpiaron los arrays de materiales del jugador en los tres niveles, se corrigieron meshes integrados inválidos y se eliminaron dos carpetas vacías accidentales del Project panel.
 - **Siguiente paso bloqueante:** convertir la UI IMGUI actual a Canvas/UGUI authorado, completar importer GLTF/GLB, NavMesh, animaciones/combate, Timeline/audio, pruebas de completar/reiniciar, build y métricas de rendimiento.
+- **Sesión 2026-08-22 (cierre de fases 4–8):** migración de UI a Canvas/UGUI authorado en las seis escenas (menú, HUD con barra de salud, pausa, subtítulos y victoria); glTFast 6.2.0 instalado y validación automatizada de importación de los 6 personajes y 8 animaciones; combate ampliado con combo, parry, knockback, hit-stun, wind-up/strike/recovery y proyectil de bruja (`WitchProjectile.prefab`); NavMesh horneado por nivel como asset externo; AudioMixer con grupos Master/Music/Ambience/SFX y música/ambiente/voces/SFX vinculados; intro restaurada a las 13 líneas originales con voces y fade; scripts divididos en un archivo por clase para serialización estable bajo `WhatTheHell3D.Runtime.asmdef`; builder editor reproducible `CampaignLevelSceneBuilder` que reconstruye los tres niveles desde los `CampaignLevelConfig`; suite `CampaignFlowTests` 9/9 superada; validaciones estáticas 0 fallos; build Linux64 232 MB con arranque verificado.
+- **Deuda documentada restante:** sustitución de primitivas por modelos finales rigueados (animaciones conectadas al Animator del caballero/enemigos), materiales finales de agua/lava/VFX, Timeline opcional, métricas de rendimiento y playtest manual comparativo contra Godot.

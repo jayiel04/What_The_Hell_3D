@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Página Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        header {
+            background-color: #4a90d9;
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        main {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        section {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        footer {
+            text-align: center;
+            padding: 1rem;
+            color: #777;
+        }
+        button {
+            background-color: #4a90d9;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Bienvenido a Mi Página</h1>
+        <p>Una página web sencilla</p>
+    </header>
+    <main>
+        <section>
+            <h2>Sobre mí</h2>
+            <p>Esta es una página de ejemplo creada con HTML, CSS y JavaScript.</p>
+        </section>
+        <section>
+            <h2>Prueba el botón</h2>
+            <p id="mensaje">Haz clic en el botón:</p>
+            <button onclick="saludar()">Saludar</button>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2026 Mi Página Web</p>
+    </footer>
+    <script>
+        function saludar() {
+            document.getElementById("mensaje").textContent = "¡Hola! Gracias por visitar mi página.";
+        }
+    </script>
+</body>
+</html>

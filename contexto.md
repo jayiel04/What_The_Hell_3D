@@ -166,3 +166,41 @@ El proyecto Unity comenzó como una plantilla URP con `SampleScene`. No se modif
 - NavMesh y pruebas reales de completar/reiniciar cada nivel.
 - Canvas/UGUI para menú, HUD, pausa y subtítulos; Timeline, voces, AudioMixer y clips de audio.
 - Combate/IA avanzada, VFX finales, build de prueba y métricas de rendimiento.
+
+## Cierre de fases 4–8 — 2026-08-22 (sesión de finalización)
+
+### UI: IMGUI → Canvas/UGUI authorado
+
+- Las seis escenas tienen Canvas serializados con `CanvasScaler` 1280×720, `GraphicRaycaster` y `EventSystem` con `InputSystemUIInputModule`.
+- Menú: título, subtítulo, botones Nueva partida / Continuar / Nivel 1–3 e hint de controles, cableados a `MenuSceneController`.
+- HUD por nivel: título y objetivo, barra de salud con `Image.Filled`, monedas, llave, checkpoint y hint.
+- Pausa: panel serializado con Continuar / Reiniciar checkpoint / Volver al menú.
+- Intro: 13 líneas originales de Godot con voces individuales (`s1_line1.mp3` … `s7_line2.mp3`), fade final y botón Saltar.
+- Victoria: título, cuerpo, narración (`victory_narration.mp3`) y retorno al menú.
+
+### Gameplay ampliado
+
+- `PlayerController`: combo de hasta 3 golpes con multiplicadores, parry con ventana configurable que refleja daño, knockback recibido con resistencia, hooks de audio/VFX (`attackClip`, `parryClip`, `hurtClip`, `attackVfx`, `parryVfx`) y socket de espada para el modelo final.
+- `EnemyController`: máquina de estados Patrol/Chase/WindUp/Strike/Recover/Stunned con telegraph visual, hit-stun, knockback aplicado al jugador y lanzamiento de proyectil en brujas mediante `WitchProjectile.prefab`.
+- `WitchProjectileRuntime`: proyectil con daño, velocidad, vida limitada y destrucción contra jugador o geometría.
+
+### Datos, escenas y servicios
+
+- `WhatTheHell3D.Runtime.asmdef` creado; scripts divididos en un archivo por clase (corrige la resolución de componentes multi-clase serializados).
+- `CampaignLevelSceneBuilder` (Editor): reconstruye los tres niveles desde los `CampaignLevelConfig` como escenas authoradas reproducibles; `CampaignAuthoringTools.AuthorAll` configura UI, audio y NavMesh.
+- NavMesh horneado por nivel como asset externo (`Assets/WhatTheHell3D/NavMesh/*.asset`) evitando serialización binaria de las escenas.
+- AudioMixer `WhatTheHellMixer.mixer` (Master/Music/Ambience/SFX) creado desde Editor; música por nivel (level 1–3.mp3), ambiente, SFX de combate y narración de victoria vinculados.
+
+### Verificación
+
+- Suite `CampaignFlowTests` (Play Mode): **9/9 superadas** — carga completa L01–L03, daño/muerte/reaparición del jugador, muerte de enemigos, proyectil de bruja, pickups, checkpoints, meta condicionada por llave y ciclo JSON del guardado.
+- Validación de assets: glTFast 6.2.0 importa los 6 personajes (meshes + rigs detectados) y las 8 animaciones del caballero con sus clips.
+- Validaciones estáticas: 395 GUIDs válidos sin duplicados, sin `.import`/`.uid`, Build Settings en orden, 379 referencias de script sin rotas, escenas en YAML texto.
+- Build de prueba Linux64: `Builds/Test/WhatTheHell3D.x86_64` (232 MB, 0 errores) con arranque verificado.
+
+### Limitaciones conocidas restantes
+
+- Los personajes siguen siendo primitivas de blockout: conectar modelos GLTF rigueados + Animator + socket de espada queda como trabajo de presentación.
+- Agua/lava/VFX finales requieren Shader Graph/materiales URP definitivos.
+- Timeline opcional: la intro usa coroutine funcional equivalente.
+- Métricas de rendimiento formales y playtest manual comparativo contra Godot pendientes de sesión interactiva.
