@@ -89,7 +89,7 @@ public sealed class CameraController : MonoBehaviour
 
     private Transform FindNearestEnemy()
     {
-        EnemyController[] enemies = FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
+        EnemyController[] enemies = FindObjectsByType<EnemyController>();
         Transform nearest = null;
         float nearestDistance = float.MaxValue;
         foreach (EnemyController enemy in enemies)

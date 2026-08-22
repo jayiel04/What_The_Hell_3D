@@ -1,4 +1,6 @@
 ﻿<Solution>
-  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="WhatTheHell3D.Runtime.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="WhatTheHell3D.PlayModeTests.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
 </Solution>

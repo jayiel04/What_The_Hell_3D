@@ -23,17 +23,48 @@ public sealed class SceneBootstrap : MonoBehaviour
         switch (role)
         {
             case RuntimeSceneRole.MainMenu:
-                gameObject.AddComponent<MenuSceneController>().Configure(sceneCatalog);
+                MenuSceneController menu = GetComponent<MenuSceneController>();
+                if (menu == null)
+                {
+                    Debug.LogError("La escena de menú debe contener un MenuSceneController creado desde Unity Editor.");
+                }
+                else
+                {
+                    menu.Configure(sceneCatalog);
+                }
                 break;
             case RuntimeSceneRole.Intro:
-                gameObject.AddComponent<IntroSceneController>().Configure(sceneCatalog);
+                IntroSceneController intro = GetComponent<IntroSceneController>();
+                if (intro == null)
+                {
+                    Debug.LogError("La escena de intro debe contener un IntroSceneController creado desde Unity Editor.");
+                }
+                else
+                {
+                    intro.Configure(sceneCatalog);
+                }
                 break;
             case RuntimeSceneRole.CampaignLevel:
-                CampaignLevelRuntime level = gameObject.AddComponent<CampaignLevelRuntime>();
-                level.Configure(levelConfig, inputActions);
+                CampaignLevelRuntime level = GetComponent<CampaignLevelRuntime>();
+                if (level == null)
+                {
+                    Debug.LogError("La escena de campaña debe contener un CampaignLevelRuntime creado desde Unity Editor.");
+                }
+                else
+                {
+                    level.Configure(levelConfig, inputActions);
+                }
                 break;
             case RuntimeSceneRole.Victory:
-                gameObject.AddComponent<VictorySceneController>().Configure(sceneCatalog);
+                VictorySceneController victory = GetComponent<VictorySceneController>();
+                if (victory == null)
+                {
+                    Debug.LogError("La escena de victoria debe contener un VictorySceneController creado desde Unity Editor.");
+                }
+                else
+                {
+                    victory.Configure(sceneCatalog);
+                }
                 break;
         }
     }

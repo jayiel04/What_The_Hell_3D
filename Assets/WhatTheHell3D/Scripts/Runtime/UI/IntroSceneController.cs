@@ -1,81 +1,116 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public sealed class IntroSceneController : MonoBehaviour
 {
+    [System.Serializable]
+    public struct SubtitleLine
+    {
+        public string text;
+        public float duration;
+        public AudioClip voice;
+    }
+
+    public Text subtitleText;
+    public Button skipButton;
+    public Image fadeImage;
+    public AudioSource voiceSource;
+    public SubtitleLine[] lines = System.Array.Empty<SubtitleLine>();
+
     private CampaignSceneCatalog catalog;
-    private int lineIndex;
-    private float lineTimer;
-    private string[] lines;
+    private bool finished;
 
     public void Configure(CampaignSceneCatalog sceneCatalog)
     {
         catalog = sceneCatalog;
-        lines = new[]
+        if (skipButton != null)
         {
-            "Algo despertó bajo las ruinas.",
-            "Tres territorios. Una llave. Ninguna explicación razonable.",
-            "Cruza el bosque, las minas y el castillo.",
-            "La puerta final espera al otro lado."
-        };
+            skipButton.onClick.AddListener(Skip);
+        }
     }
 
     private void Start()
     {
+        if (fadeImage != null)
+        {
+            Color color = fadeImage.color;
+            color.a = 0f;
+            fadeImage.color = color;
+        }
+
         StartCoroutine(PlayIntro());
     }
 
     private IEnumerator PlayIntro()
     {
         yield return new WaitForSecondsRealtime(0.6f);
-        while (lineIndex < lines.Length)
+        for (int i = 0; i < lines.Length; i++)
         {
-            lineTimer = 0f;
-            while (lineTimer < 2.6f)
+            if (subtitleText != null)
             {
-                lineTimer += Time.unscaledDeltaTime;
-                if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
-                {
-                    lineTimer = 2.6f;
-                }
-
-                yield return null;
+                subtitleText.text = lines[i].text;
             }
 
-            lineIndex++;
+            if (voiceSource != null && lines[i].voice != null)
+            {
+                voiceSource.clip = lines[i].voice;
+                voiceSource.Play();
+            }
+
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.5f, lines[i].duration));
         }
 
+        if (subtitleText != null)
+        {
+            subtitleText.text = string.Empty;
+        }
+
+        yield return FadeOut();
         LoadFirstLevel();
     }
 
-    private void OnGUI()
+    private IEnumerator FadeOut()
     {
-        Color previousColor = GUI.color;
-        GUI.color = new Color(0.01f, 0.01f, 0.02f, 0.96f);
-        GUI.Box(new Rect(0f, 0f, Screen.width, Screen.height), GUIContent.none);
-        GUI.color = previousColor;
-
-        string currentLine = lineIndex < lines.Length ? lines[lineIndex] : "";
-        GUIStyle lineStyle = new GUIStyle(GUI.skin.label)
+        if (fadeImage == null)
         {
-            alignment = TextAnchor.MiddleCenter,
-            fontSize = Mathf.Clamp(Screen.height / 22, 20, 38),
-            wordWrap = true,
-            normal = { textColor = Color.white }
-        };
-        GUI.Label(new Rect(Screen.width * 0.15f, Screen.height * 0.42f, Screen.width * 0.7f, 100f), currentLine, lineStyle);
-        if (GUI.Button(new Rect(Screen.width - 180f, Screen.height - 75f, 140f, 42f), "Saltar"))
-        {
-            StopAllCoroutines();
-            LoadFirstLevel();
+            yield break;
         }
+
+        float elapsed = 0f;
+        while (elapsed < 1.2f)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            Color color = fadeImage.color;
+            color.a = Mathf.Clamp01(elapsed / 1.2f);
+            fadeImage.color = color;
+            yield return null;
+        }
+    }
+
+    public void Skip()
+    {
+        StopAllCoroutines();
+        StartCoroutine(SkipSequence());
+    }
+
+    private IEnumerator SkipSequence()
+    {
+        yield return FadeOut();
+        LoadFirstLevel();
     }
 
     private void LoadFirstLevel()
     {
-        if (catalog != null)
+        if (finished)
+        {
+            return;
+        }
+
+        finished = true;
+        Time.timeScale = 1f;
+        if (catalog != null && !string.IsNullOrEmpty(catalog.GetCampaignLevelScene(1)))
         {
             SceneManager.LoadScene(catalog.GetCampaignLevelScene(1));
         }

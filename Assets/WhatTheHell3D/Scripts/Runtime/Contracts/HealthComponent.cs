@@ -8,6 +8,7 @@ public sealed class HealthComponent : MonoBehaviour, IDamageable
 
     public event Action<HealthComponent> HealthChanged;
     public event Action<HealthComponent> Died;
+    public event Action<DamageInfo> Damaged;
 
     public int CurrentHealth => currentHealth;
     public bool IsAlive => currentHealth > 0;
@@ -35,6 +36,7 @@ public sealed class HealthComponent : MonoBehaviour, IDamageable
         int appliedDamage = Mathf.Max(1, Mathf.CeilToInt(damage.amount * Mathf.Max(0f, DamageMultiplier)));
         currentHealth = Mathf.Max(0, currentHealth - appliedDamage);
         HealthChanged?.Invoke(this);
+        Damaged?.Invoke(damage);
         if (currentHealth == 0)
         {
             Died?.Invoke(this);

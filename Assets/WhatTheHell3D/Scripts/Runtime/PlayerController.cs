@@ -28,20 +28,47 @@ public sealed class PlayerController : MonoBehaviour
     public float dodgeStaminaCost = 26f;
     public float staminaRecoveryPerSecond = 28f;
 
+    [Header("Combo")]
+    public int maxComboSteps = 3;
+    public float comboWindow = 0.9f;
+    public float[] comboDamageMultipliers = { 1f, 1.25f, 1.7f };
+
+    [Header("Parry")]
+    public float parryWindow = 0.28f;
+    public int parryDamage = 15;
+    public float parryKnockback = 4.5f;
+
+    [Header("Knockback")]
+    public float knockbackResistance = 1f;
+
+    [Header("Feedback")]
+    public AudioSource combatAudioSource;
+    public AudioClip attackClip;
+    public AudioClip parryClip;
+    public AudioClip hurtClip;
+    public Transform swordSocket;
+    public ParticleSystem attackVfx;
+    public ParticleSystem parryVfx;
+
     public bool IsGuarding { get; private set; }
     public HealthComponent Health { get; private set; }
+    public int ComboStep => comboStep;
 
     private CharacterController controller;
     private InputReader input;
     private Transform cameraTransform;
     private Vector3 velocity;
     private Vector3 planarVelocity;
+    private Vector3 knockbackVelocity;
     private Vector3 spawnPosition;
     private float nextAttackTime;
+    private float lastAttackTime;
+    private float guardStartTime = -100f;
     private float stamina;
     private float lastGroundedTime = -100f;
     private float jumpBufferExpires;
     private int jumpCount;
+    private int comboStep;
     private bool isDodging;
     private bool respawning;
 
@@ -56,6 +83,8 @@ public sealed class PlayerController : MonoBehaviour
         stamina = maximumStamina;
         Health.Died -= OnDied;
         Health.Died += OnDied;
+        Health.Damaged -= OnDamaged;
+        Health.Damaged += OnDamaged;
     }
 
     private void Awake()
@@ -77,7 +106,13 @@ public sealed class PlayerController : MonoBehaviour
             input = new InputReader();
         }
 
+        bool guardWasHeld = IsGuarding;
         IsGuarding = input.GuardHeld && !isDodging;
+        if (IsGuarding && !guardWasHeld)
+        {
+            guardStartTime = Time.time;
+        }
+
         Health.IsInvulnerable = isDodging;
         Health.DamageMultiplier = IsGuarding ? 0.25f : 1f;
         if (!isDodging)
@@ -153,7 +188,8 @@ public sealed class PlayerController : MonoBehaviour
         }
 
         velocity.y += gravity * Time.deltaTime;
-        controller.Move((planarVelocity + velocity) * Time.deltaTime);
+        controller.Move((planarVelocity + knockbackVelocity + velocity) * Time.deltaTime);
+        knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, 18f * Time.deltaTime);
     }
 
     private void Attack()
@@ -163,7 +199,22 @@ public sealed class PlayerController : MonoBehaviour
             return;
         }
 
+        if (Time.time - lastAttackTime <= comboWindow && comboStep < Mathf.Max(1, maxComboSteps))
+        {
+            comboStep++;
+        }
+        else
+        {
+            comboStep = 0;
+        }
+
+        lastAttackTime = Time.time;
         nextAttackTime = Time.time + attackCooldown;
+        float multiplier = comboDamageMultipliers != null && comboStep < comboDamageMultipliers.Length
+            ? comboDamageMultipliers[comboStep]
+            : 1f;
+        int damage = Mathf.Max(1, Mathf.RoundToInt(attackDamage * multiplier));
+        PlayFeedback(attackClip, attackVfx);
         Vector3 origin = transform.position + transform.forward * attackRange;
         Collider[] hits = Physics.OverlapSphere(origin, attackRadius, LayerMask.GetMask("Enemy"));
         foreach (Collider hit in hits)
@@ -171,9 +222,65 @@ public sealed class PlayerController : MonoBehaviour
             IDamageable damageable = FindDamageable(hit);
             if (damageable != null && damageable.IsAlive)
             {
-                damageable.TakeDamage(new DamageInfo(attackDamage, transform.position, gameObject));
+                damageable.TakeDamage(new DamageInfo(damage, transform.position, gameObject));
             }
         }
+    }
+
+    private void OnDamaged(DamageInfo damage)
+    {
+        bool parried = IsGuarding && Time.time - guardStartTime <= parryWindow
+            && Vector3.Dot((damage.sourcePosition - transform.position).normalized, transform.forward) > 0.25f;
+        if (parried)
+        {
+            PlayFeedback(parryClip, parryVfx);
+            IDamageable attacker = FindDamageableFromSource(damage.source);
+            attacker?.TakeDamage(new DamageInfo(parryDamage, transform.position, gameObject));
+            return;
+        }
+
+        PlayFeedback(hurtClip, null);
+        Vector3 direction = transform.position - damage.sourcePosition;
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.001f)
+        {
+            knockbackVelocity += direction.normalized * (6f / Mathf.Max(0.25f, knockbackResistance));
+        }
+
+        comboStep = 0;
+    }
+
+    private void PlayFeedback(AudioClip clip, ParticleSystem vfx)
+    {
+        if (clip != null && combatAudioSource != null)
+        {
+            combatAudioSource.PlayOneShot(clip);
+        }
+
+        if (vfx != null)
+        {
+            vfx.transform.position = transform.position + transform.forward * attackRange;
+            vfx.Play();
+        }
+    }
+
+    private IDamageable FindDamageableFromSource(GameObject source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        MonoBehaviour[] behaviours = source.GetComponentsInParent<MonoBehaviour>(true);
+        foreach (MonoBehaviour behaviour in behaviours)
+        {
+            if (behaviour is IDamageable damageable && !ReferenceEquals(damageable, Health))
+            {
+                return damageable;
+            }
+        }
+
+        return null;
     }
 
     private IEnumerator Dodge()
@@ -254,6 +361,8 @@ public sealed class PlayerController : MonoBehaviour
         respawning = true;
         planarVelocity = Vector3.zero;
         velocity = Vector3.zero;
+        knockbackVelocity = Vector3.zero;
+        comboStep = 0;
         yield return new WaitForSecondsRealtime(1.1f);
 
         Vector3 respawnPosition = CampaignRuntimeState.Instance == null

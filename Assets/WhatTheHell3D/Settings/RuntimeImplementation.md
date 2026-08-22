@@ -9,7 +9,7 @@
 - `Scripts/Runtime/Contracts/HealthComponent.cs`: daño, curación, guardia, invulnerabilidad y muerte.
 - `Scripts/Runtime/Gameplay/EnemyController.cs`: goblin, zombie y bruja con patrulla, detección, persecución, leash, ataque y muerte.
 - `Scripts/Runtime/Gameplay/WorldObjects.cs`: plataformas móviles, plataformas que caen, hazards, pickups, bonus caches, checkpoints y meta.
-- `Scripts/Runtime/Gameplay/CampaignLevelRuntime.cs`: constructor runtime para los tres layouts migrados.
+- `Scripts/Runtime/Gameplay/CampaignLevelRuntime.cs`: coordinador de referencias y estado para los tres layouts authorados.
 - `Scripts/Runtime/UI/`: menú, intro, HUD, pausa y victoria.
 - `Scripts/Runtime/Audio/CampaignAudioDirector.cs`: punto de integración para música y ambiente.
 
@@ -35,7 +35,18 @@ Todas usan `SceneBootstrap` y referencias explícitas al catálogo, a los `Campa
 
 ## Comprobaciones obligatorias en Unity Editor
 
-- Confirmar que el proyecto compila sin errores y que Unity acepta las referencias serializadas.
+### Ejecutadas el 2026-08-22
+
+- Unity 6000.5.6f1 importó y compiló el proyecto sin errores rojos en Console ni Safe Mode.
+- 371 GUIDs de `.meta` tienen 32 caracteres hexadecimales y no hay duplicados.
+- Las seis escenas existen en Build Settings, con `MainMenu` como primera escena.
+- `MainMenu`, `Intro`, `CampaignLevel01`, `CampaignLevel02`, `CampaignLevel03` y `Victory` se abrieron en Editor; las campañas se revisaron en Scene View y las seis escenas se ejecutaron en Play Mode.
+- Las cámaras persistentes de las seis escenas están serializadas; los tres niveles tienen MeshFilter/MeshRenderer, materiales URP Lit de blockout, luces y referencias de gameplay visibles.
+- Console quedó con 0 errores del proyecto; persiste una advertencia externa de Account API.
+
+### Pendientes
+
+- Mantener la comprobación de compilación y referencias después de cada cambio; la ronda del 2026-08-22 quedó sin errores rojos en Console.
 - Confirmar importación de FBX/OBJ/texturas/audio/fuente y resolver GLTF/GLB.
 - Sustituir primitivas temporales por prefabs/modelos importados y verificar escala, materiales, rigs y animaciones.
 - Probar menú, intro, pausa, movimiento, doble salto, combate, IA, pickups, checkpoints, guardado y victoria en Play Mode.

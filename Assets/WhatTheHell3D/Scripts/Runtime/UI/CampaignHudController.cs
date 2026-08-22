@@ -1,67 +1,77 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class CampaignHudController : MonoBehaviour
 {
+    public Text objectiveTitle;
+    public Text objectiveText;
+    public Image healthFill;
+    public Text healthLabel;
+    public Text coinsLabel;
+    public Text keyLabel;
+    public Text checkpointLabel;
+    public Text hintLabel;
+
     private CampaignLevelConfig config;
     private PlayerController player;
-    private GUIStyle labelStyle;
-    private GUIStyle objectiveStyle;
 
     public void Configure(CampaignLevelConfig level, PlayerController playerController)
     {
         config = level;
         player = playerController;
+        if (objectiveTitle != null)
+        {
+            objectiveTitle.text = config.title;
+        }
+
+        if (objectiveText != null)
+        {
+            objectiveText.text = config.objective;
+        }
+
+        if (hintLabel != null)
+        {
+            hintLabel.text = "Esc pausa · E interactuar";
+        }
     }
 
-    private void OnGUI()
+    private void Update()
     {
         if (config == null || player == null)
         {
             return;
         }
 
-        EnsureStyles();
         CampaignProgressData progress = CampaignRuntimeState.Instance == null ? null : CampaignRuntimeState.Instance.Progress;
         int currentHealth = player.Health == null ? 0 : player.Health.CurrentHealth;
-        float healthWidth = 220f * (currentHealth / 100f);
-
-        GUI.Label(new Rect(24f, 18f, 320f, 30f), config.title, objectiveStyle);
-        GUI.Label(new Rect(24f, 51f, 440f, 30f), config.objective, labelStyle);
-        GUI.Label(new Rect(24f, 86f, 180f, 24f), "SALUD " + currentHealth + "/100", labelStyle);
-        Color previousColor = GUI.color;
-        GUI.color = new Color(0.65f, 0.08f, 0.08f);
-        GUI.DrawTexture(new Rect(24f, 112f, 220f, 14f), Texture2D.whiteTexture);
-        GUI.color = new Color(0.15f, 0.8f, 0.25f);
-        GUI.DrawTexture(new Rect(24f, 112f, Mathf.Clamp(healthWidth, 0f, 220f), 14f), Texture2D.whiteTexture);
-        GUI.color = previousColor;
-
-        int collected = progress == null ? 0 : progress.collected;
-        int total = progress == null ? 0 : progress.totalCollectibles;
-        bool key = progress != null && progress.keyCollected;
-        int checkpoint = progress == null ? 0 : progress.checkpointIndex;
-        GUI.Label(new Rect(Screen.width - 300f, 20f, 270f, 28f), "Monedas: " + collected + "/" + total, labelStyle);
-        GUI.Label(new Rect(Screen.width - 300f, 50f, 270f, 28f), "Llave: " + (key ? "obtenida" : "pendiente"), labelStyle);
-        GUI.Label(new Rect(Screen.width - 300f, 80f, 270f, 28f), "Checkpoint: " + checkpoint, labelStyle);
-        GUI.Label(new Rect(Screen.width - 300f, Screen.height - 36f, 270f, 24f), "Esc pausa · E interactuar", labelStyle);
-    }
-
-    private void EnsureStyles()
-    {
-        if (labelStyle != null)
+        int maxHealth = player.Health == null ? 100 : player.Health.maxHealth;
+        if (healthLabel != null)
         {
-            return;
+            healthLabel.text = "SALUD " + currentHealth + "/" + maxHealth;
         }
 
-        labelStyle = new GUIStyle(GUI.skin.label)
+        if (healthFill != null)
         {
-            fontSize = 16,
-            normal = { textColor = Color.white }
-        };
-        objectiveStyle = new GUIStyle(labelStyle)
+            healthFill.fillAmount = Mathf.Clamp01((float)currentHealth / Mathf.Max(1, maxHealth));
+        }
+
+        if (coinsLabel != null)
         {
-            fontSize = 22,
-            fontStyle = FontStyle.Bold,
-            normal = { textColor = new Color(1f, 0.82f, 0.3f) }
-        };
+            int collected = progress == null ? 0 : progress.collected;
+            int total = progress == null ? 0 : progress.totalCollectibles;
+            coinsLabel.text = "Monedas: " + collected + "/" + total;
+        }
+
+        if (keyLabel != null)
+        {
+            bool key = progress != null && progress.keyCollected;
+            keyLabel.text = "Llave: " + (key ? "obtenida" : "pendiente");
+        }
+
+        if (checkpointLabel != null)
+        {
+            int checkpoint = progress == null ? 0 : progress.checkpointIndex;
+            checkpointLabel.text = "Checkpoint: " + checkpoint;
+        }
     }
 }

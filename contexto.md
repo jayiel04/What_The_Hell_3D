@@ -96,11 +96,22 @@ El proyecto Unity comenzó como una plantilla URP con `SampleScene`. No se modif
 - Se creó `CameraController` con seguimiento, zoom, colisión, look-ahead y lock-on al enemigo más cercano.
 - Se creó `EnemyController` para goblins, zombies y brujas con patrulla, detección, persecución, leash, ataque y muerte.
 - Se crearon componentes runtime para plataformas móviles, plataformas que caen, hazards, kill zone, pickups, bonus caches, checkpoints y meta.
-- Se creó `CampaignLevelRuntime`, que construye los tres layouts desde los `CampaignLevelConfig` y configura iluminación, fog, geometría temporal, jugador, enemigos, cámara y objetivo.
+- Se creó `CampaignLevelRuntime` como coordinador de los tres niveles; recibe referencias serializadas y configura estado, iluminación, fog, jugador, enemigos, cámara y objetivo sin construir contenido de escena.
 - Se crearon las escenas `MainMenu`, `Intro`, `CampaignLevel01`, `CampaignLevel02`, `CampaignLevel03` y `Victory`, todas con `SceneBootstrap` y referencias serializadas al catálogo/datos.
 - Se actualizó `EditorBuildSettings.asset` para iniciar en `MainMenu` y contener el flujo activo completo.
 - Se crearon controladores runtime de menú, intro con subtítulos/skip, HUD, pausa, victoria y punto de integración de audio.
 - Se creó [RuntimeImplementation.md](Assets/WhatTheHell3D/Settings/RuntimeImplementation.md) con inventario, comprobaciones estáticas y pruebas pendientes.
+
+### Conversión a escenas authoradas en Unity Editor
+
+- Se modificó `SceneBootstrap` para obtener `MenuSceneController`, `IntroSceneController`, `CampaignLevelRuntime` y `VictorySceneController` ya presentes en la escena, sin añadir componentes mediante código.
+- `CampaignLevelRuntime` dejó de construir GameObjects, primitivas, colliders, luces, cámara, enemigos, pickups, UI y audio; ahora solo coordina referencias serializadas y configura el estado de campaña.
+- `CampaignLevel01.unity`, `CampaignLevel02.unity` y `CampaignLevel03.unity` fueron reconstruidas con objetos serializados de plataforma, jugador, cámara, luces, hazards, pickups, checkpoints, enemigos, meta y componentes de comportamiento.
+- Se añadieron también triggers estáticos de caída de plataformas y una kill zone fuera de límites.
+- `MovingPlatformRuntime`, `FallingPlatformRuntime` y `CampaignAudioDirector` fueron ajustados para trabajar con referencias/componentes existentes en escena.
+- La auditoría encontró 81, 83 y 91 GameObjects serializados en los niveles 1, 2 y 3 respectivamente.
+- Se crearon seis materiales URP Lit persistentes en `Assets/WhatTheHell3D/Materials` y se asignaron a los 231 `MeshRenderer` de los tres niveles, con colores diferenciados para terreno, jugador, enemigos, pickups, peligros y objetivo.
+- La geometría actual usa meshes primitivos integrados como representación temporal; los materiales de color son de blockout y todavía deben sustituirse por materiales y modelos finales importados.
 
 ## Archivos principales de la migración
 
@@ -111,25 +122,26 @@ El proyecto Unity comenzó como una plantilla URP con `SampleScene`. No se modif
 - [CampaignProgressData.cs](Assets/WhatTheHell3D/Scripts/Runtime/Services/CampaignProgressData.cs): estado serializable de campaña.
 - [JsonCampaignProgressStore.cs](Assets/WhatTheHell3D/Scripts/Runtime/Services/JsonCampaignProgressStore.cs): almacenamiento JSON.
 - [GameplayContracts.cs](Assets/WhatTheHell3D/Scripts/Runtime/Contracts/GameplayContracts.cs): contratos de gameplay.
-- [CampaignLevelRuntime.cs](Assets/WhatTheHell3D/Scripts/Runtime/Gameplay/CampaignLevelRuntime.cs): constructor runtime de los niveles.
+- [CampaignLevelRuntime.cs](Assets/WhatTheHell3D/Scripts/Runtime/Gameplay/CampaignLevelRuntime.cs): coordinador de referencias y estado de los niveles.
 - [PlayerController.cs](Assets/WhatTheHell3D/Scripts/Runtime/PlayerController.cs): movimiento y combate base del jugador.
 - [RuntimeImplementation.md](Assets/WhatTheHell3D/Settings/RuntimeImplementation.md): resumen de fases 4–8 y validaciones.
 
 ## Pendientes y limitaciones actuales
 
-- Unity Editor no está disponible por CLI en el entorno; falta verificar compilación C#, importación real y deserialización dentro del editor.
+- Unity Editor 6000.5.6f1 estuvo disponible durante la verificación del 2026-08-22; el proyecto importó, deserializó y ejecutó Play Mode sin errores rojos de C#.
 - GLTF/GLB todavía necesita glTFast, otro importer compatible o conversión a FBX.
 - Los rigs, huesos, clips y sockets de espada aún no han sido validados en Unity.
-- Los materiales URP, agua, lava, fog y VFX todavía no han sido convertidos visualmente.
+- Agua, lava, fog y VFX todavía no han sido convertidos visualmente; los objetos sólidos ya tienen materiales URP Lit de blockout.
 - Las escenas Unity del menú, intro, niveles y victoria ya existen como escenas bootstrap y están registradas en Build Settings.
 - `SampleScene` se conserva fuera del flujo activo como escena de plantilla, pero ya no es la escena inicial del build.
 - El servicio de guardado ya está conectado al flujo de escenas, gameplay, pickups, checkpoints, HUD y pausa.
-- El constructor de niveles usa primitivas temporales; los modelos, prefabs, rigs, animaciones y materiales fuente todavía no están vinculados al runtime.
+- Las escenas ya contienen objetos serializados, primitivas temporales y materiales URP de blockout; los modelos, prefabs reutilizables, rigs, animaciones y materiales fuente todavía no están vinculados.
+- Las seis escenas se abrieron en Unity Editor. Las tres campañas se revisaron en Scene View con jerarquía, MeshFilter, MeshRenderer, materiales, cámara y luces visibles; además se ejecutaron en Play Mode.
 - La intro actual usa coroutine e IMGUI para subtítulos; Timeline, fade final, voces y AudioMixer todavía deben integrarse.
 - La IA inicial usa locomoción propia, no NavMesh; proyectiles de bruja, parry, combo, knockback, wind-up/recovery y VFX finales siguen pendientes.
 - La UI actual es IMGUI runtime para validar el flujo; debe sustituirse o consolidarse en Canvas/UGUI durante el acabado de presentación.
 - La compatibilidad con el archivo de guardado de Godot no forma parte de la primera entrega.
-- No se debe avanzar a una build jugable completa hasta validar la importación y compilación en Unity Editor.
+- La build jugable completa sigue bloqueada por importer GLTF/GLB, UI UGUI, NavMesh, Timeline/audio final, animaciones y rendimiento; la compilación y la ejecución base sí fueron validadas en Editor.
 
 ### Corrección de errores de compilación y metadatos
 
@@ -137,8 +149,20 @@ El proyecto Unity comenzó como una plantilla URP con `SampleScene`. No se modif
 - Se corrigieron los GUIDs de `JsonCampaignProgressStore.cs.meta`, `GameplayContracts.cs.meta`, `WorldObjects.cs.meta` e `Intro.unity.meta` a 32 caracteres hexadecimales.
 - Se actualizó el GUID de `Intro.unity` en `ProjectSettings/EditorBuildSettings.asset`.
 - No se eliminó `Library`, no se regeneraron metadatos globalmente y no se modificó código C#.
-- La comprobación automática confirmó GUIDs válidos y ausencia de duplicados; la confirmación de recompilación y salida de Safe Mode requiere observar Unity Editor.
+- La comprobación automática confirmó 371 GUIDs válidos, longitud de 32 caracteres y ausencia de duplicados. Unity salió de Safe Mode, importó las escenas y Console mostró 0 errores del proyecto; quedó 1 advertencia externa de Account API.
 
-## Siguiente objetivo
+## Verificación visual y estado actual — 2026-08-22
 
-Abrir el proyecto en Unity 6000.5.6f1, verificar compilación/deserialización y ejecutar en Play Mode el flujo completo. Después resolver importación GLTF/GLB, sustituir primitivas por assets fuente, integrar rigs/animaciones/audio/Timeline y medir la build.
+- `MainMenu`: cámara persistente creada y guardada desde Unity Editor; Play Mode muestra el menú sin el aviso “No cameras rendering”.
+- `Intro`: cámara persistente creada y guardada desde Unity Editor; Play Mode muestra subtítulos y el botón `Saltar`.
+- `CampaignLevel01`, `CampaignLevel02` y `CampaignLevel03`: jerarquía authorada visible en Scene View; jugador, plataformas, enemigos/pickups/hazards, cámaras, luces y materiales URP Lit de blockout visibles en Play Mode con HUD.
+- `Victory`: cámara persistente creada y guardada desde Unity Editor; Play Mode muestra victoria y el botón de retorno al menú funciona.
+- Evidencias: `/tmp/unity-mainmenu-play-camera-fixed.png`, `/tmp/unity-intro-play2.png`, `/tmp/unity-campaign01-play-final.png`, `/tmp/unity-campaign02-play.png`, `/tmp/unity-campaign03-play.png`, `/tmp/unity-campaign03-pause2.png`, `/tmp/unity-victory-play.png` y `/tmp/unity-victory-return-menu.png`.
+- La UI todavía usa IMGUI runtime: no se declara cerrada la condición de Canvas/UGUI hasta authorar Canvas, textos y botones serializados desde Unity Editor.
+
+## Pendientes bloqueantes
+
+- Importer compatible para GLTF/GLB, revisión de escala/rig/animaciones y sustitución de primitivas por modelos fuente.
+- NavMesh y pruebas reales de completar/reiniciar cada nivel.
+- Canvas/UGUI para menú, HUD, pausa y subtítulos; Timeline, voces, AudioMixer y clips de audio.
+- Combate/IA avanzada, VFX finales, build de prueba y métricas de rendimiento.
