@@ -137,7 +137,7 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 - [~] Crear el jugador como objeto serializado de escena —y candidato a prefab reutilizable— con `CharacterController`, `HealthComponent` y configuración reutilizable.
 - [x] Reproducir movimiento, salto doble, coyote time, jump buffer, sprint, gravedad y control aéreo (verificado en Play Mode).
 - [x] Reproducir ataque con combo, parry, knockback, stamina, guardia con reducción de daño, dodge con invulnerabilidad, lock-on, daño y muerte/reaparición (verificado en Play Mode).
-- [~] Conectar animaciones importadas, espada en el hueso de la mano y VFX finales; los sonidos de combate (espada, parry/bell, daño) ya están cableados vía `PlayerController.combatAudioSource` y los hooks de VFX existen (`attackVfx`/`parryVfx`).
+- [~] Conectar malla y animaciones del personaje importadas; la malla del caballero (`Knight_Male.gltf`, exportada desde Godot/Mixamo) ya se carga en tiempo de ejecución desde `Assets/StreamingAssets/Characters/` vía glTFast y se anima con sus clips embebidos (Idle/Walk/Run/Jump/SwordSlash/Roll/RecieveHit/Death) según el estado de combate; pendiente: equipar la espada en el hueso de la mano, retargetear a avatar humanoide para mezclar con otras fuentes y VFX finales. Los sonidos de combate (espada, parry/bell, daño) ya están cableados vía `PlayerController.combatAudioSource` y los hooks de VFX existen (`attackVfx`/`parryVfx`).
 - [x] Implementar la cámara de aventura con seguimiento, zoom, colisión y lock-on usando los valores de cada nivel.
 - [x] Construir y colocar como objetos serializados un tramo verificable del nivel 1 con suelo, plataformas, enemigos, pickups y checkpoints; se revisó en Scene View y Play Mode.
 

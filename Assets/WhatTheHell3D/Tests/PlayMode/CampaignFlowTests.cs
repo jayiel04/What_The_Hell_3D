@@ -39,6 +39,33 @@ namespace WhatTheHell3D.Tests
         }
 
         [UnityTest]
+        public IEnumerator Level01_JugadorMuestraMallaDelCaballero()
+        {
+            yield return LoadScene(Level01);
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            Assert.IsNotNull(player, "El nivel debe contener un jugador.");
+
+            // Esperar a que el modelo glTF se cargue de forma asíncrona.
+            SkinnedMeshRenderer skin = null;
+            for (int i = 0; i < 120; i++)
+            {
+                Transform model = player.transform.Find("KnightModel");
+                if (model != null)
+                {
+                    skin = model.GetComponentInChildren<SkinnedMeshRenderer>();
+                    if (skin != null) break;
+                }
+                yield return null;
+            }
+
+            Assert.IsNotNull(skin,
+                "El jugador debe mostrar la malla del caballero (Knight_Male.gltf) cargada desde StreamingAssets.");
+            Assert.IsTrue(skin.sharedMesh != null && skin.sharedMesh.vertexCount > 0,
+                "La malla del caballero debe tener vértices.");
+        }
+
+        [UnityTest]
         public IEnumerator Jugador_RecibeDanyoYMuereYReaparece()
         {
             yield return LoadScene(Level01);

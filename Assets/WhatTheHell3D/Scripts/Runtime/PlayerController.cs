@@ -1,4 +1,7 @@
 using System.Collections;
+using System.IO;
+using System.Threading;
+using GLTFast;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -50,6 +53,14 @@ public sealed class PlayerController : MonoBehaviour
     public ParticleSystem attackVfx;
     public ParticleSystem parryVfx;
 
+    [Header("Visual Model")]
+    [Tooltip("Ruta relativa a StreamingAssets del glTF del caballero exportado desde Godot/Mixamo.")]
+    public string characterModelPath = "Characters/Knight_Male.gltf";
+    public bool loadCharacterModel = true;
+    public float modelScale = 1f;
+    public float modelYawOffsetDegrees = 0f;
+    public string[] loopClips = { "Idle", "Walk", "Run" };
+
     public bool IsGuarding { get; private set; }
     public HealthComponent Health { get; private set; }
     public int ComboStep => comboStep;
@@ -71,6 +82,14 @@ public sealed class PlayerController : MonoBehaviour
     private int comboStep;
     private bool isDodging;
     private bool respawning;
+    private bool modelStarted;
+    private bool modelLoaded;
+    private Transform modelRoot;
+    private Animation animator;
+    private string currentClip;
+    private float actionClipEnd;
+    private float attackAnimUntil;
+    private float hurtAnimUntil;
 
     public void Configure(InputActionAsset inputActions, Transform cameraTarget, Vector3 initialSpawn)
     {
@@ -85,6 +104,11 @@ public sealed class PlayerController : MonoBehaviour
         Health.Died += OnDied;
         Health.Damaged -= OnDamaged;
         Health.Damaged += OnDamaged;
+        if (loadCharacterModel && !modelStarted)
+        {
+            modelStarted = true;
+            StartCoroutine(LoadCharacterModel());
+        }
     }
 
     private void Awake()
@@ -133,6 +157,8 @@ public sealed class PlayerController : MonoBehaviour
                 Interact();
             }
         }
+
+        UpdateAnimation();
     }
 
     private void Move()
@@ -210,6 +236,7 @@ public sealed class PlayerController : MonoBehaviour
 
         lastAttackTime = Time.time;
         nextAttackTime = Time.time + attackCooldown;
+        attackAnimUntil = Time.time + 0.5f;
         float multiplier = comboDamageMultipliers != null && comboStep < comboDamageMultipliers.Length
             ? comboDamageMultipliers[comboStep]
             : 1f;
@@ -240,6 +267,7 @@ public sealed class PlayerController : MonoBehaviour
         }
 
         PlayFeedback(hurtClip, null);
+        hurtAnimUntil = Time.time + 0.35f;
         Vector3 direction = transform.position - damage.sourcePosition;
         direction.y = 0f;
         if (direction.sqrMagnitude > 0.001f)
@@ -381,6 +409,149 @@ public sealed class PlayerController : MonoBehaviour
     public void SetSpawnPosition(Vector3 position)
     {
         spawnPosition = position;
+    }
+
+    private IEnumerator LoadCharacterModel()
+    {
+        string localPath = Path.Combine(Application.streamingAssetsPath, characterModelPath);
+        if (!File.Exists(localPath))
+        {
+            Debug.LogWarning($"[Player] Modelo de personaje no encontrado en {localPath}; se usa marcador de posición.");
+            CreatePlaceholder();
+            yield break;
+        }
+
+        var importer = new GltfImport();
+        var loadTask = importer.LoadFile(localPath, null, null, CancellationToken.None);
+        while (!loadTask.IsCompleted)
+        {
+            yield return null;
+        }
+
+        if (!loadTask.Result)
+        {
+            Debug.LogError($"[Player] Falló la carga del modelo de personaje: {localPath}");
+            CreatePlaceholder();
+            yield break;
+        }
+
+        modelRoot = new GameObject("KnightModel").transform;
+        modelRoot.SetParent(transform, false);
+        modelRoot.localPosition = Vector3.zero;
+        modelRoot.localRotation = Quaternion.Euler(0f, modelYawOffsetDegrees, 0f);
+        modelRoot.localScale = Vector3.one * modelScale;
+
+        var instantiateTask = importer.InstantiateMainSceneAsync(modelRoot, CancellationToken.None);
+        while (!instantiateTask.IsCompleted)
+        {
+            yield return null;
+        }
+
+        animator = modelRoot.GetComponent<Animation>() ?? modelRoot.gameObject.AddComponent<Animation>();
+        animator.playAutomatically = false;
+        foreach (AnimationClip clip in importer.GetAnimationClips())
+        {
+            clip.legacy = true;
+            bool loop = System.Array.IndexOf(loopClips, clip.name) >= 0;
+            clip.wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
+            if (animator.GetClip(clip.name) == null)
+            {
+                animator.AddClip(clip, clip.name);
+            }
+        }
+
+        if (animator.GetClip("Idle"))
+        {
+            animator.Play("Idle");
+            currentClip = "Idle";
+        }
+
+        modelLoaded = true;
+
+        Transform placeholder = transform.Find("PlayerCapsule");
+        if (placeholder != null)
+        {
+            MeshRenderer mr = placeholder.GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                mr.enabled = false;
+            }
+        }
+    }
+
+    private void CreatePlaceholder()
+    {
+        if (transform.Find("PlayerCapsule") != null)
+        {
+            return;
+        }
+
+        GameObject placeholder = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        placeholder.name = "PlayerCapsule";
+        placeholder.transform.SetParent(transform, false);
+        placeholder.transform.localPosition = Vector3.up * 1f;
+        placeholder.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
+        Object.Destroy(placeholder.GetComponent<Collider>());
+    }
+
+    private void UpdateAnimation()
+    {
+        if (animator == null || !modelLoaded)
+        {
+            return;
+        }
+
+        bool alive = Health.IsAlive;
+        string desired;
+        if (!alive)
+        {
+            desired = animator.GetClip("Death") ? "Death" : "Idle";
+        }
+        else if (isDodging)
+        {
+            desired = "Roll";
+        }
+        else if (Time.time < attackAnimUntil)
+        {
+            desired = "SwordSlash";
+        }
+        else if (Time.time < hurtAnimUntil)
+        {
+            desired = "RecieveHit";
+        }
+        else if (!controller.isGrounded)
+        {
+            desired = "Jump";
+        }
+        else
+        {
+            float speed = planarVelocity.magnitude;
+            desired = speed > sprintSpeed * 0.55f ? "Run" : (speed > 0.15f ? "Walk" : "Idle");
+        }
+
+        bool desiredIsLoop = System.Array.IndexOf(loopClips, desired) >= 0;
+        if (!animator.GetClip(desired))
+        {
+            desired = desiredIsLoop ? "Idle" : (currentClip ?? "Idle");
+        }
+
+        if (desired == currentClip)
+        {
+            return;
+        }
+
+        if (!desiredIsLoop && currentClip != null && System.Array.IndexOf(loopClips, currentClip) < 0 && Time.time < actionClipEnd)
+        {
+            return;
+        }
+
+        AnimationClip clip = animator.GetClip(desired);
+        if (clip != null)
+        {
+            animator.CrossFade(desired, 0.12f);
+            currentClip = desired;
+            actionClipEnd = Time.time + clip.length;
+        }
     }
 
     private void OnDrawGizmosSelected()

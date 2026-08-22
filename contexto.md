@@ -204,3 +204,26 @@ El proyecto Unity comenzó como una plantilla URP con `SampleScene`. No se modif
 - Agua/lava/VFX finales requieren Shader Graph/materiales URP definitivos.
 - Timeline opcional: la intro usa coroutine funcional equivalente.
 - Métricas de rendimiento formales y playtest manual comparativo contra Godot pendientes de sesión interactiva.
+
+## Malla del personaje principal visible — 2026-08-22 (sesión complementaria)
+
+### Hallazgo
+La malla del caballero **sí se había transferido de Godot a Unity**: `Knight_Male.gltf` (exportado vía Mixamo/Blender a glTF 2.0) estaba en `Assets/WhatTheHell3D/Art/Source/characters/player/`. El problema de "no se ve el personaje principal" era que el jugador en escena solo tenía `CharacterController` + `HealthComponent` + `PlayerController`, **sin ninguna malla** (el enemigo sí tenía una cápsula de placeholder, el jugador no).
+
+### Solución (carga en tiempo de ejecución, sin dependencias del editor)
+- El glTF es autocontenido (buffer embebido en base64, sin `.bin` ni texturas externas), así que se copió a `Assets/StreamingAssets/Characters/Knight_Male.gltf` para que `Application.streamingAssetsPath` lo resuelva tanto en editor como en build.
+- `WhatTheHell3D.Runtime.asmdef` ahora referencia `glTFast`.
+- `PlayerController` carga el modelo de forma asíncrona (`GltfImport.LoadFile` + `InstantiateMainSceneAsync`) y lo padre al jugador como hijo `KnightModel`, con `modelScale` y `modelYawOffsetDegrees` expuestos para ajuste fino de orientación/escala.
+- La animación usa el componente `Animation` (legacy, válido en build) con los **17 clips embebidos del propio glTF** (Death, Defeat, Idle, Jump, PickUp, Punch, RecieveHit, Roll, Run, Run_Carry, Shoot_OneHanded, SitDown, StandUp, SwordSlash, Victory, Walk, Walk_Carry). `UpdateAnimation()` elige el clip según estado: muerte → `Death`, esquiva → `Roll`, ataque → `SwordSlash`, daño → `RecieveHit`, en aire → `Jump`, y locomoción → `Walk`/`Run`/`Idle` (en bucle).
+- Si la carga falla, se crea una cápsula de respaldo (`PlayerCapsule`) para que el jugador nunca quede invisible.
+- Se mantiene el marcador de posición de la cápsula deshabilitado cuando el modelo real carga.
+
+### Verificación
+- Compilación: 0 errores C#.
+- Suite Play Mode: **10/10** (nuevo test `Level01_JugadorMuestraMallaDelCaballero` afirma `SkinnedMeshRenderer` con malla de vértices > 0 en el hijo `KnightModel`).
+- Build Linux64 (234 MB, 0 errores); `Knight_Male.gltf` confirmado dentro de `WhatTheHell3D_Data/StreamingAssets/Characters/`.
+
+### Pendiente (mismo patrón aplicable a enemigos)
+- Equipar la espada en el hueso de la mano (`Fist.R`) vía el `swordSocket` existente.
+- Aplicar el mismo flujo glTFast a goblins, zombies y bruja (`Assets/WhatTheHell3D/Art/Source/characters/enemies/`) para reemplazar sus cápsulas.
+- Retargetear a un avatar Humanoid si se quieren mezclar clips de distintas fuentes; actualmente se usan los clips nativos del esqueleto del caballero (Generic/legacy), que animan fielmente sin retargeting.
