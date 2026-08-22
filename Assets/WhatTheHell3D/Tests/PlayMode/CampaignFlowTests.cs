@@ -46,9 +46,9 @@ namespace WhatTheHell3D.Tests
             PlayerController player = Object.FindFirstObjectByType<PlayerController>();
             Assert.IsNotNull(player, "El nivel debe contener un jugador.");
 
-            // Esperar a que el modelo glTF se cargue de forma asíncrona.
+            // Esperar a que el modelo glTF se cargue de forma asíncrona (6 modelos concurrentes pueden tardar más en headless).
             SkinnedMeshRenderer skin = null;
-            for (int i = 0; i < 120; i++)
+            for (int i = 0; i < 300; i++)
             {
                 Transform model = player.transform.Find("KnightModel");
                 if (model != null)
@@ -63,6 +63,45 @@ namespace WhatTheHell3D.Tests
                 "El jugador debe mostrar la malla del caballero (Knight_Male.gltf) cargada desde StreamingAssets.");
             Assert.IsTrue(skin.sharedMesh != null && skin.sharedMesh.vertexCount > 0,
                 "La malla del caballero debe tener vértices.");
+        }
+
+        [UnityTest]
+        public IEnumerator Enemigos_MuestranMallaSegunKind()
+        {
+            yield return LoadScene(Level01);
+            EnemyController[] enemies = Object.FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
+            Assert.IsTrue(enemies.Length > 0, "El nivel debe contener al menos un enemigo para verificar su malla.");
+
+            foreach (EnemyController enemy in enemies)
+            {
+                SkinnedMeshRenderer skin = null;
+                for (int i = 0; i < 300; i++)
+                {
+                    Transform model = enemy.transform.Find($"{enemy.kind}Model");
+                    if (model != null)
+                    {
+                        skin = model.GetComponentInChildren<SkinnedMeshRenderer>();
+                        if (skin != null) break;
+                    }
+
+                    // También buscar cualquier KnightModel-like si se usó nombre genérico.
+                    if (skin == null)
+                    {
+                        skin = enemy.GetComponentInChildren<SkinnedMeshRenderer>();
+                        if (skin != null && skin.transform != enemy.transform.Find("EnemyVisual")) break;
+                        skin = null;
+                    }
+
+                    yield return null;
+                }
+
+                Assert.IsNotNull(skin,
+                    $"El enemigo {enemy.kind} en {enemy.transform.position} debe mostrar su malla glTF ({enemy.kind}).");
+                Assert.IsTrue(skin.sharedMesh != null && skin.sharedMesh.vertexCount > 0,
+                    $"La malla de {enemy.kind} debe tener vértices.");
+                Assert.IsFalse(skin.gameObject.name == "EnemyVisual",
+                    "La malla validada debe ser la del modelo glTF, no la cápsula de respaldo.");
+            }
         }
 
         [UnityTest]

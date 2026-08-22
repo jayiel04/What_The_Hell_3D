@@ -1,3 +1,7 @@
+using System.Collections;
+using System.IO;
+using System.Threading;
+using GLTFast;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -43,6 +47,14 @@ public sealed class EnemyController : MonoBehaviour
     public AudioClip hurtClip;
     private Color baseColor = Color.white;
 
+    [Header("Visual Model")]
+    [Tooltip("Ruta relativa a StreamingAssets; si está vacía se resuelve por kind.")]
+    public string characterModelPath = string.Empty;
+    public bool loadCharacterModel = true;
+    public float modelScale = 1f;
+    public float modelYawOffsetDegrees = 0f;
+    public string[] loopClips = { "Idle", "Walk", "Run" };
+
     public HealthComponent Health { get; private set; }
 
     private CharacterController controller;
@@ -55,6 +67,12 @@ public sealed class EnemyController : MonoBehaviour
     private bool dying;
     private EnemyState state = EnemyState.Patrol;
     private Renderer[] renderers;
+    private bool modelStarted;
+    private bool modelLoaded;
+    private Transform modelRoot;
+    private Animation animator;
+    private string currentClip;
+    private float actionClipEnd;
 
     public void Configure(CampaignEnemyKind enemyKind, float patrol, Transform player)
     {
@@ -63,12 +81,26 @@ public sealed class EnemyController : MonoBehaviour
         target = player;
         Initialize();
         ApplyDefaults();
+        if (loadCharacterModel && !modelStarted)
+        {
+            modelStarted = true;
+            StartCoroutine(LoadCharacterModel());
+        }
     }
 
     private void Awake()
     {
         Initialize();
         ApplyDefaults();
+    }
+
+    private void Start()
+    {
+        if (loadCharacterModel && !modelStarted && !string.IsNullOrEmpty(GetModelPath()))
+        {
+            modelStarted = true;
+            StartCoroutine(LoadCharacterModel());
+        }
     }
 
     private void Initialize()
@@ -139,6 +171,8 @@ public sealed class EnemyController : MonoBehaviour
                 UpdateCombat();
                 break;
         }
+
+        UpdateAnimation();
     }
 
     private void UpdateCombat()
@@ -351,6 +385,11 @@ public sealed class EnemyController : MonoBehaviour
     private void OnDied(HealthComponent _)
     {
         dying = true;
+        if (animator != null && animator.GetClip("Death"))
+        {
+            animator.CrossFade("Death", 0.12f);
+        }
+
         Collider[] colliders = GetComponentsInChildren<Collider>();
         foreach (Collider collider in colliders)
         {
@@ -364,5 +403,161 @@ public sealed class EnemyController : MonoBehaviour
         }
 
         Destroy(gameObject, 1.2f);
+    }
+
+    private string GetModelPath()
+    {
+        if (!string.IsNullOrEmpty(characterModelPath))
+        {
+            return characterModelPath;
+        }
+
+        switch (kind)
+        {
+            case CampaignEnemyKind.Goblin:
+                // Alterna variante por posición para mostrar variedad sin cambiar el enum.
+                int g = Mathf.FloorToInt(Mathf.Abs(transform.position.x * 7.3f) + Mathf.Abs(transform.position.z * 3.7f));
+                return (g % 2 == 0)
+                    ? "Characters/Enemies/Goblin_Male.gltf"
+                    : "Characters/Enemies/Goblin_Female.gltf";
+            case CampaignEnemyKind.Zombie:
+                int z = Mathf.FloorToInt(Mathf.Abs(transform.position.x * 5.1f) + Mathf.Abs(transform.position.z * 4.2f));
+                return (z % 2 == 0)
+                    ? "Characters/Enemies/Zombie_Male.gltf"
+                    : "Characters/Enemies/Zombie_Female.gltf";
+            case CampaignEnemyKind.Witch:
+                return "Characters/Enemies/Witch.gltf";
+            default:
+                return "Characters/Enemies/Goblin_Male.gltf";
+        }
+    }
+
+    private IEnumerator LoadCharacterModel()
+    {
+        string rel = GetModelPath();
+        if (string.IsNullOrEmpty(rel))
+        {
+            yield break;
+        }
+
+        string localPath = Path.Combine(Application.streamingAssetsPath, rel);
+        if (!File.Exists(localPath))
+        {
+            Debug.LogWarning($"[Enemy:{kind}] Modelo no encontrado en {localPath}");
+            yield break;
+        }
+
+        var importer = new GltfImport();
+        var loadTask = importer.LoadFile(localPath, null, null, CancellationToken.None);
+        while (!loadTask.IsCompleted) yield return null;
+        if (!loadTask.Result)
+        {
+            Debug.LogError($"[Enemy:{kind}] Falló carga de {localPath}");
+            yield break;
+        }
+
+        modelRoot = new GameObject($"{kind}Model").transform;
+        modelRoot.SetParent(transform, false);
+        modelRoot.localPosition = Vector3.zero;
+        modelRoot.localRotation = Quaternion.Euler(0f, modelYawOffsetDegrees, 0f);
+        modelRoot.localScale = Vector3.one * modelScale;
+
+        var instTask = importer.InstantiateMainSceneAsync(modelRoot, CancellationToken.None);
+        while (!instTask.IsCompleted) yield return null;
+
+        animator = modelRoot.GetComponent<Animation>() ?? modelRoot.gameObject.AddComponent<Animation>();
+        animator.playAutomatically = false;
+        foreach (AnimationClip clip in importer.GetAnimationClips())
+        {
+            clip.legacy = true;
+            bool loop = System.Array.IndexOf(loopClips, clip.name) >= 0;
+            clip.wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
+            if (animator.GetClip(clip.name) == null)
+            {
+                animator.AddClip(clip, clip.name);
+            }
+        }
+
+        if (animator.GetClip("Idle"))
+        {
+            animator.Play("Idle");
+            currentClip = "Idle";
+        }
+
+        modelLoaded = true;
+        renderers = GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length > 0 && renderers[0].sharedMaterial != null)
+        {
+            baseColor = renderers[0].sharedMaterial.color;
+        }
+
+        Transform placeholder = transform.Find("EnemyVisual");
+        if (placeholder != null)
+        {
+            var mr = placeholder.GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = false;
+        }
+    }
+
+    private void UpdateAnimation()
+    {
+        if (animator == null || !modelLoaded || dying) return;
+
+        string desired;
+        switch (state)
+        {
+            case EnemyState.Stunned:
+                desired = "RecieveHit";
+                break;
+            case EnemyState.WindUp:
+                desired = kind == CampaignEnemyKind.Witch ? "Shoot_OneHanded" : "Punch";
+                break;
+            case EnemyState.Strike:
+                desired = kind == CampaignEnemyKind.Witch ? "Shoot_OneHanded" : "SwordSlash";
+                break;
+            case EnemyState.Recover:
+                desired = "Idle";
+                break;
+            default:
+                if (target != null)
+                {
+                    float dist = Vector3.Distance(transform.position, target.position);
+                    float homeDist = Vector3.Distance(transform.position, homePosition);
+                    bool chasing = dist <= detectionRange && homeDist <= leashDistance;
+                    desired = chasing ? "Run" : "Walk";
+                    if (!chasing && Vector3.Distance(transform.position, PatrolDestination()) < 0.3f)
+                    {
+                        desired = "Idle";
+                    }
+                }
+                else
+                {
+                    desired = "Walk";
+                }
+
+                break;
+        }
+
+        bool desiredIsLoop = System.Array.IndexOf(loopClips, desired) >= 0;
+        if (animator.GetClip(desired) == null)
+        {
+            desired = desiredIsLoop ? "Idle" : currentClip;
+            if (desired == null || animator.GetClip(desired) == null) return;
+            desiredIsLoop = System.Array.IndexOf(loopClips, desired) >= 0;
+        }
+
+        if (desired == currentClip) return;
+        if (!desiredIsLoop && currentClip != null && System.Array.IndexOf(loopClips, currentClip) < 0 && Time.time < actionClipEnd)
+        {
+            return;
+        }
+
+        AnimationClip clip = animator.GetClip(desired);
+        if (clip != null)
+        {
+            animator.CrossFade(desired, 0.12f);
+            currentClip = desired;
+            actionClipEnd = Time.time + clip.length;
+        }
     }
 }

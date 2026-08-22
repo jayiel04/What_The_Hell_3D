@@ -227,3 +227,24 @@ La malla del caballero **sí se había transferido de Godot a Unity**: `Knight_M
 - Equipar la espada en el hueso de la mano (`Fist.R`) vía el `swordSocket` existente.
 - Aplicar el mismo flujo glTFast a goblins, zombies y bruja (`Assets/WhatTheHell3D/Art/Source/characters/enemies/`) para reemplazar sus cápsulas.
 - Retargetear a un avatar Humanoid si se quieren mezclar clips de distintas fuentes; actualmente se usan los clips nativos del esqueleto del caballero (Generic/legacy), que animan fielmente sin retargeting.
+
+## Mallas de enemigos visibles — 2026-08-22 (continuación)
+
+### Mismo patrón que el jugador, extendido a enemigos
+- 5 glTF copiados a `Assets/StreamingAssets/Characters/Enemies/` (Goblin_Male/Female, Zombie_Male/Female, Witch — mismas 17 animaciones Mixamo que Knight).
+- `EnemyController` (en `WhatTheHell3D.Runtime`, ya referencia `glTFast`) carga en `Start()` el modelo según `CampaignEnemyKind.kind`:
+  - Goblin/Zombie eligen variante M/F por hash de posición (`|x|*7.3+|z|*3.7`) para variedad sin cambiar el enum.
+  - Witch → `Witch.gltf`.
+  - `characterModelPath` expuesto para override manual si se desea forzar una variante.
+- Carga idéntica a jugador: `GltfImport.LoadFile` + `InstantiateMainSceneAsync` bajo hijo `<Kind>Model`, `Animation` legacy con `playAutomatically=false`, clips con `wrapMode` (Loop para Idle/Walk/Run, Once para resto), `CrossFade` por estado.
+- Animación mapeada a `EnemyState`: Patrol/Chase → Walk/Run/Idle, WindUp → Punch / `Shoot_OneHanded` (bruja), Strike → SwordSlash / `Shoot_OneHanded`, Stunned → RecieveHit, Recover → Idle, Death → Death (en `OnDied`). Tint de estados (`SetTint`) y `OnDied` gris ahora incluyen el modelo (refresca `GetComponentsInChildren<Renderer>` tras la carga y oculta la cápsula `EnemyVisual`).
+- Armadura del jugador: inicio de carga movido de `Awake` a `Start` para que `Configure` fije `kind` antes de elegir el glTF (evita condición de carrera en spawns dinámicos).
+
+### Verificación
+- 11/11 Play Mode (`Level01_JugadorMuestraMallaDelCaballero` + `Enemigos_MuestranMallaSegunKind` con 300 frames de espera para las 6 cargas concurrentes).
+- Build Linux64 244 MB, 0 errores, 6 glTF en `StreamingAssets/Characters/` + `Enemies/` confirmados.
+- Enemigo sigue con colisionador `CharacterController` (la malla es solo visual, no afecta colisión).
+
+### Ajustes visuales pendientes (si se ven girados/pequeños)
+- `modelYawOffsetDegrees` y `modelScale` expuestos en `EnemyController` y `PlayerController` por instancia.
+- Equipar armas en hueso `Fist.R` vía socket (pendiente de retarget humanoide si se quieren mezclar animaciones de distintas fuentes).
