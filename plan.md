@@ -210,6 +210,30 @@ Tareas:
 
 **Salida esperada:** al pulsar «Nueva partida» se reproduce la cinemática 3D completa con movimientos de cámara, caballero caminando/animado, narrador con las 15 líneas y audio ambiental, omitible con Enter, entrando al nivel 1 idéntico al original.
 
+### Fase 10 — Menú principal idéntico al original de Godot
+
+Referencia Godot: `scripts/menu/main_menu.gd` (629 líneas, mundo 3D + UI construida por código). El menú actual de Unity es una UGUI plana sin mundo 3D; esta fase lo reemplaza por una réplica completa.
+
+**Inventario verificado (todo en Unity):** `moon_nasa_lro_4k.png` (`Art/Source/environment/moon/`), `Tree1–3.fbx` y `Rock1–4.fbx` (`Art/Source/environment/nature/`), 11 FBX medievales (`Art/Source/medieval_buildings/`), `ambiente 1.mp3` y `votones menu.mp3` (Audio/Source/legacy_sounds/).
+
+Tareas:
+
+- [x] Crear `MenuSceneAuthoring.cs` (Editor, idempotente) que autorre el mundo 3D del menú con las constantes exactas de `_build_world()`: WorldEnvironment (fondo `#02040a`, ambiente `#46536a` a 0.32), luna direccional rot(−18,−12,0) `#dfe9ff` 0.95 con sombras, omni `#cfe2ff` en (10.5,13.8,−22) rango 28.
+- [x] Luna NASA: esfera radio 2.35 en (10.5,13.8,−22) con `moon_nasa_lro_4k.png` en albedo+emisión (energía 0.35), más el componente runtime `MoonSpinner` que la rota 0.35°/s como `_process`.
+- [x] Campos de estrellas: replicar los 5 MultiMesh (`StarsFarA` 120, `StarsFarB` 80, `StarsCluster` 24, `StarsEdge` 42, `StarsTop` 28) como esferas diminutas unlit emisivas generadas con las funciones deterministas `_star_position(i,pattern)`/`_star_radius(i,pattern)` traducidas a C#.
+- [x] Castillo medieval completo con posiciones/tintes de `_spawn_asset`: WallEntrance (0,0,−9) ×2.25 `b9c2ce`; Door ×2.15 `7d5635`; Bridge (2,1.35,2.25) `9a7a52`; Well (−6,0,−2) `6e7e8f`; ±7 LargeSquareTower z−10.5 `c6ccd6`; ±12 PointyTower z−13 `b7bec9`; ±13.5 WatchTowerWRoof z−5 `d7c7ae`; ±3.8 Banner y2.8 `caa24a`; fila WallBricks x∈{−10.5…10.5} z−10 `b8bfc9` — todo rotado Y=180°.
+- [x] Naturaleza: Tree1 ×1.5 (4 posiciones), Tree2 ×1.25, Tree3 ×1.2, Rock1 ×0.95, Rock4 ×1.05 con sus tintes (`36563a`, `3f6441`, `446b46`, `5d6470`, `525965`) y piso 40×35 `#111820`.
+- [x] Antorchas: 4 luces omni `#ff8a36` energía 5 rango 9 en (±4.4,2.7,−5) y (±8,3.2,−9); niebla: 7 quads transparentes unlit alpha 0.08 tamaño (13+i·2, 3) en (−9+i·3, …).
+- [x] Cámara de menú: componente runtime `MenuCameraSway` replicando `_process` — posición base (0,5,14) + seno(x·0.22)·0.8 / seno(y·0.35)·0.18, lookAt(0,2.5,−7.5), FOV 57.
+- [x] UI UGUI réplica: overlay negro 0.18 + viñeta 0.2; bloque de título arriba-izquierda («WHAT THE HELL?» 20pt `#ffb42b` con sombra + subtítulo «UNA AVENTURA…» `#d8e3f1`); panel izquierdo con NUEVO JUEGO / CONTINUAR / CAPÍTULOS / CRÉDITOS / SALIR (estilo Godot: normal bg(0.09,0.10,0.14) borde(0.32,0.38,0.47); hover naranja bg(0.85,0.43,0.07) borde `#ffc04a`; pressed oscuro); hint abajo centrado.
+- [x] Popups estilo Godot (bg(0.035,0.028,0.055,α0.96) borde `#d99022` grosor 3): CAPÍTULOS con los 3 botones bicolor («CAPÍTULO I\nEL BOSQUE MALDITO» verde `5fc46a`, «II LAS MINAS DEL INFIERNO» naranja `f07b32`, «III EL CASTILLO DEL DIABLO» violeta `ae7cf0`) + VOLVER; CRÉDITOS con líder Marlon, grid 2 columnas de los 9 integrantes, «Godot Engine 4»→«Unity 6000» en desarrollo, recursos y «Gracias por jugar» + VOLVER. Nota de desviación: esquinas rectas (sin radius 18, requiere sprite generado).
+- [x] Reescribir `MenuSceneController` con máquina de estados Main/Chapters/Credits (ESC vuelve), CONTINUAR deshabilitado sin guardado (`JsonCampaignProgressStore.Load()`), CAPÍTULO n → `CampaignRuntimeState.SelectLevel(n)`, SALIR cierra la app, click SFX (`votones menu.mp3`) en cada botón y música `ambiente 1.mp3` en bucle (−10 dB ≈ volumen 0.32).
+- [x] Eliminar los 3 botones directos «Nivel 1–3» actuales (sustituidos por CAPÍTULOS) y actualizar `CampaignAuthoringTools.AuthorMenuScene` para delegar en `MenuSceneAuthoring`.
+- [x] Pruebas Play Mode: menú carga mundo (16/16) (luna, ≥294 estrellas, castillo), música en bucle, CONTINUAR responde al guardado, CAPÍTULOS abre popup y cada capítulo carga su nivel, ESC vuelve de popups, SALIR no rompe en batch; suite completa en verde.
+- [~] Validación estática 0 fallos (384 refs), build Linux64 0 errores (258 MB), plan y contexto actualizados; comparación visual manual contra Godot pendiente de sesión interactiva.
+
+**Salida esperada:** al abrir el juego se ve el patio nocturno original (luna NASA girando, estrellas, castillo medieval con antorchas y niebla), la cámara ondea, la UI tiene los 5 botones estilizados con popups de capítulos y créditos, con música y SFX de clic como el original.
+
 ## 6. Obstáculos principales y mitigaciones
 
 | Obstáculo | Riesgo | Mitigación |
@@ -251,7 +275,8 @@ Tareas:
 5. Generación completa de los niveles 1–3.
 6. Menús, HUD, pausa, cinemática y audio.
 7. Paridad, rendimiento, build y documentación.
-8. Fase 9 — Cinemática de intro 3D (siguiente bloque activo).
+8. Fase 9 — Cinemática de intro 3D (completada).
+9. Fase 10 — Menú principal idéntico al original (siguiente bloque activo).
 
 La regla de avance es no continuar con el siguiente bloque si el bloque anterior no tiene una prueba reproducible y un criterio de salida verificable.
 

@@ -35,7 +35,7 @@ public static class CampaignAuthoringTools
         GameObject projectilePrefab = CreateWitchProjectilePrefabAsset();
         AudioMixer mixer = CreateAudioMixerAsset();
 
-        AuthorMenuScene(mixer);
+        MenuSceneAuthoring.AuthorMenuScene3D();
         IntroSceneAuthoring.AuthorIntroScene3D();
         AuthorVictoryScene();
         foreach (string level in new[] { "CampaignLevel01", "CampaignLevel02", "CampaignLevel03" })
@@ -49,54 +49,7 @@ public static class CampaignAuthoringTools
 
     // ------------------------------------------------------------------ menú
 
-    private static void AuthorMenuScene(AudioMixer mixer)
-    {
-        OpenScene("MainMenu");
-        MenuSceneController controller = FindSingle<MenuSceneController>();
-        if (controller == null)
-        {
-            Debug.LogError("[Authoring] MainMenu no contiene MenuSceneController.");
-            return;
-        }
-
-        Canvas canvas = EnsureCanvas("UICanvas", new Color(0.04f, 0.05f, 0.08f, 0.97f));
-        Text title = CreateText(canvas.transform, "TitleText", "WHAT THE HELL? 3D", 54,
-            new Color(1f, 0.82f, 0.28f), FontStyle.Bold);
-        Anchor(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(900f, 80f));
-        title.alignment = TextAnchor.MiddleCenter;
-
-        Text subtitle = CreateText(canvas.transform, "SubtitleText", "Aventura de plataformas · Migración Unity", 22, Color.white);
-        Anchor(subtitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -200f), new Vector2(900f, 40f));
-        subtitle.alignment = TextAnchor.MiddleCenter;
-
-        Button newGame = CreateButton(canvas.transform, "NewGameButton", "Nueva partida", new Vector2(0f, 60f));
-        Button continueGame = CreateButton(canvas.transform, "ContinueButton", "Continuar", new Vector2(0f, 0f));
-
-        Text selection = CreateText(canvas.transform, "SelectionLabel", "Selección directa", 20, Color.white);
-        Anchor(selection.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -70f), new Vector2(320f, 32f));
-        selection.alignment = TextAnchor.MiddleCenter;
-
-        Button level1 = CreateButton(canvas.transform, "Level1Button", "Nivel 1", new Vector2(-170f, -130f));
-        Button level2 = CreateButton(canvas.transform, "Level2Button", "Nivel 2", new Vector2(0f, -130f));
-        Button level3 = CreateButton(canvas.transform, "Level3Button", "Nivel 3", new Vector2(170f, -130f));
-
-        Text hint = CreateText(canvas.transform, "HintLabel",
-            "WASD mover · Espacio saltar · Clic izquierdo atacar · Q esquivar · Esc pausar", 16, Color.white);
-        Anchor(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(1100f, 30f));
-        hint.alignment = TextAnchor.MiddleCenter;
-
-        controller.titleText = title;
-        controller.subtitleText = subtitle;
-        controller.hintLabel = hint;
-        controller.newGameButton = newGame;
-        controller.continueButton = continueGame;
-        controller.level1Button = level1;
-        controller.level2Button = level2;
-        controller.level3Button = level3;
-        EditorUtility.SetDirty(controller);
-
-        SaveOpenScene("MainMenu");
-    }
+    // La autoría del menú 3D vive en MenuSceneAuthoring.cs (Fase 10).
 
     // ----------------------------------------------------------------- intro
 

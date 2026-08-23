@@ -299,3 +299,25 @@ Se añadieron aserciones anti-regresión al test `Intro_Cutscene_TimelineAvanzaY
 2. **Objetos sin textura/color**: los OBJ de nature_pack traen MTL multi-material (Tree: hojas Kd(0.52,0.64,0.18), tronco Kd(0.20,0.09,0.04)) que el material plano único aplastaba. Fix: `AddMeshRenderer` ahora acepta `Material[]` y los asigna cíclicamente por submesh; árboles con hojas+tronco, tumbas con `stone1_albedo.png`, muralla con `wall_stone.jpg`, estatua con su albedo.
 3. **Castillo original**: reemplazado el bloqueo Keep/Towers (city_house/small_building) por el castillo del menú de Godot (`main_menu.gd::_build_world`): WallEntrance, Door, Bridge, Well, 2× LargeSquareTower, 2× PointyTower, 2× WatchTowerWRoof, 2× Banner y fila de WallBricks, con las mismas posiciones locales, rotación Y=180°, escalas y tintes planos de la paleta original (`b9c2ce`, `7d5635`, `9a7a52`, `6e7e8f`, `c6ccd6`, `b7bec9`, `d7c7ae`, `caa24a`). Grupo situado en z=−22 tras la puerta; CastleLight ajustada.
 Re-verificado: suite 14/14, build Linux64 249 MB 0 errores.
+
+## Fase 10 — Menú principal réplica — 2026-08-22
+
+### Runtime nuevo
+- `UI/MoonSpinner.cs`: rotación de la luna a 0.35°/s (main_menu.gd::_process).
+- `UI/MenuCameraSway.cs`: vaivén senoidal de la cámara — base (0,5,14) + sin(t·0.22)·0.8 / sin(t·0.35)·0.18, lookAt(0,2.5,−7.5).
+- `UI/UIButtonHover.cs`: estilo Godot de botones — bg normal (0.09,0.10,0.14,α0.88) → hover naranja (0.85,0.43,0.07) → pressed oscuro; texto blanco → dorado #ffc04a al hover.
+- `UI/MenuSceneController.cs` reescrito: estados Principal/Capítulos/Créditos, ESC vuelve de popups (Input System), CONTINUAR deshabilitado sin guardado (`JsonCampaignProgressStore.Load()`), capítulos → `CampaignRuntimeState.SelectLevel(n)`, SALIR cierra la app, `PlayClick()` en cada botón y música ambiente 1.mp3 en bucle (volumen 0.32 ≈ −10 dB).
+
+### Builder editor
+- `Tools/Editor/MenuSceneAuthoring.cs` (`WhatTheHell3D > Autoría > Autoría de menú 3D`, idempotente): replica `_build_world()` — luna direccional #dfe9ff rot(−18,−12) + omni #cfe2ff rango 28; disco lunar NASA escalado ×4.7 con MoonSpinner; **294 estrellas** en 5 campos generadas con las funciones deterministas `_star_position/_star_radius` traducidas a C# (×4 de tamaño para visibilidad sin bloom); castillo medieval completo (WallEntrance ×2.25, Door ×2.15, Bridge, Well, ±LargeSquareTower/PointyTower/WatchTowerWRoof/Banner, fila WallBricks ×1.75) con tintes hex originales; 12 árboles/rocas con sus tintes; piso 40×35 #111820; 4 antorchas #ff8a36 energía 5 rango 9; 7 quads de niebla unlit α0.08; cámara FOV 57 mirando −Z; audio música+clic; UI UGUI completa (overlay 0.18 + viñeta 0.2 no bloqueantes, título/subtítulo con sombra, panel izquierdo, hint inferior, popups con Outline #d99022). `AuthorAll` delega aquí.
+- Lecciones aplicadas durante la autoría headless: `??` falla con fake-null de Unity (usar if explícito en GetComponent+AddComponent); `GameObject.Find` no encuentra inactivos (asignar referencias desde variables locales antes de SetActive(false)); Substring con longitud mayor que el string.
+
+### Verificación
+- Suite PlayMode **16/16** (`Menu_MundoCargaConLunaEstrellasYCastillo`: luna+textura NASA, ≥294 estrellas, piezas del castillo, vaivén, música en bucle, popups cerrados, CONTINUAR coherente con guardado; `Menu_PopupsYNavegacionACapitulos`: abrir/cerrar popups y CAPÍTULO I → CampaignLevel01).
+- Compilación C#: 0 errores. Validación estática: 0 fallos (384 refs de script, GUIDs, Build Settings, YAML).
+- Build Linux64: 258 MB, 0 errores.
+
+### Desviaciones conocidas respecto a Godot
+- Popups con esquinas rectas y Outline simple (Godot usa StyleBoxFlat radius 18 + sombra).
+- Estrellas ×4 de su radio original para que sean visibles sin post-proceso bloom/filmic.
+- Tamaños de fuente escalados (~×1.6) para la resolución de referencia 1280×720.

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,6 +10,71 @@ namespace WhatTheHell3D.Tests
     public sealed class CampaignFlowTests
     {
         private const string Level01 = "Assets/WhatTheHell3D/Scenes/CampaignLevel01.unity";
+
+        [UnityTest]
+        public IEnumerator Menu_MundoCargaConLunaEstrellasYCastillo()
+        {
+            yield return LoadScene("Assets/WhatTheHell3D/Scenes/MainMenu.unity");
+
+            MoonSpinner moon = Object.FindFirstObjectByType<MoonSpinner>();
+            Assert.IsNotNull(moon, "La luna NASA debe existir con su componente de rotación.");
+            MeshRenderer moonRenderer = moon.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(moonRenderer.sharedMaterial != null ? moonRenderer : null,
+                "La luna debe tener material.");
+            Assert.IsNotNull(moonRenderer.sharedMaterial.mainTexture,
+                "La luna debe tener la textura NASA asignada.");
+
+            int stars = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Count(t => t.name.StartsWith("Star"));
+            Assert.GreaterOrEqual(stars, 294, "Deben existir las 294 estrellas de los 5 campos (120+80+24+42+28).");
+
+            Assert.IsNotNull(GameObject.Find("Entrance"), "El castillo debe tener WallEntrance.");
+            Assert.IsNotNull(GameObject.Find("PointyTowerL"), "El castillo debe tener torres puntiagudas.");
+            Assert.IsNotNull(GameObject.Find("BannerR"), "El castillo debe tener estandartes.");
+            Assert.IsNotNull(Object.FindFirstObjectByType<MenuCameraSway>(), "La cámara debe tener vaivén.");
+
+            MenuSceneController controller = Object.FindFirstObjectByType<MenuSceneController>();
+            Assert.IsNotNull(controller, "Debe existir MenuSceneController.");
+            yield return null;
+            Assert.IsTrue(controller.musicSource.isPlaying && controller.musicSource.loop,
+                "La música ambiente 1.mp3 debe sonar en bucle desde el inicio.");
+            Assert.IsFalse(controller.chaptersPanel.activeSelf, "Los popups deben iniciar cerrados.");
+            Assert.AreEqual(controller.IsContinueAvailable(), controller.continueButton.interactable,
+                "CONTINUAR debe estar habilitado solo si existe guardado.");
+        }
+
+        [UnityTest]
+        public IEnumerator Menu_PopupsYNavegacionACapitulos()
+        {
+            yield return LoadScene("Assets/WhatTheHell3D/Scenes/MainMenu.unity");
+            MenuSceneController controller = Object.FindFirstObjectByType<MenuSceneController>();
+            Assert.IsNotNull(controller);
+
+            // CAPÍTULOS abre popup y VOLVER regresa.
+            controller.chaptersButton.onClick.Invoke();
+            Assert.IsTrue(controller.chaptersPanel.activeSelf, "CAPÍTULOS debe abrir su popup.");
+            controller.chaptersBackButton.onClick.Invoke();
+            Assert.IsFalse(controller.chaptersPanel.activeSelf, "VOLVER debe cerrar el popup.");
+
+            // CRÉDITOS abre/cierra.
+            controller.creditsButton.onClick.Invoke();
+            Assert.IsTrue(controller.creditsPanel.activeSelf, "CRÉDITOS debe abrir su popup.");
+            controller.ShowMain();
+            Assert.IsFalse(controller.creditsPanel.activeSelf);
+
+            // CAPÍTULO I navega a CampaignLevel01.
+            controller.chaptersButton.onClick.Invoke();
+            controller.chapter1Button.onClick.Invoke();
+            float timeout = Time.realtimeSinceStartup + 15f;
+            while (!SceneManager.GetActiveScene().path.Contains("CampaignLevel01")
+                   && Time.realtimeSinceStartup < timeout)
+            {
+                yield return null;
+            }
+
+            Assert.IsTrue(SceneManager.GetActiveScene().path.Contains("CampaignLevel01"),
+                $"CAPÍTULO I debe cargar el nivel 1, escena activa: {SceneManager.GetActiveScene().path}");
+        }
 
         [UnityTest]
         public IEnumerator Level01_CargaConJugadorCamaraHudYAudio()
