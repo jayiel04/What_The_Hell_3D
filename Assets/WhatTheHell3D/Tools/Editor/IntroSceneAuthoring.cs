@@ -117,16 +117,15 @@ public static class IntroSceneAuthoring
         Material cobble = EnsureMaterial("IntroGround", new Color(0.62f, 0.62f, 0.64f),
             LoadTexture($"{ModelsRoot}/textures/cobblestone_floor/cobblestone_diff.jpg"), new Vector2(40f, 240f));
         Material stone = EnsureMaterial("IntroStone", new Color(0.55f, 0.56f, 0.60f), null, Vector2.one);
-        Material statueMat = EnsureMaterial("IntroStatue", new Color(0.72f, 0.68f, 0.58f),
+        Material statueMat = EnsureMaterial("IntroStatue", Color.white,
             LoadTexture($"{ModelsRoot}/models/statue/statue_color.jpg"), Vector2.one);
-        Material houseMat = EnsureMaterial("IntroHouse", new Color(0.65f, 0.58f, 0.48f),
-            LoadTexture($"{ModelsRoot}/models/small_building/small_building_color.jpg"), Vector2.one);
-        Material cityMat = EnsureMaterial("IntroCityHouse", new Color(0.60f, 0.55f, 0.50f),
-            LoadTexture($"{ModelsRoot}/models/city_house/city_house_color.jpg"), Vector2.one);
-        Material trunk = EnsureMaterial("IntroTrunk", new Color(0.34f, 0.22f, 0.10f), null, Vector2.one);
-        Material foliageA = EnsureMaterial("IntroFoliageA", new Color(0.10f, 0.37f, 0.16f), null, Vector2.one);
-        Material foliageB = EnsureMaterial("IntroFoliageB", new Color(0.08f, 0.32f, 0.14f), null, Vector2.one);
-        Material graveMat = EnsureMaterial("IntroGrave", new Color(0.62f, 0.63f, 0.66f), null, Vector2.one);
+        // Colores reales del Tree1.mtl de Godot: hojas Kd(0.52,0.64,0.18) y tronco Kd(0.20,0.09,0.04).
+        Material leaves = EnsureMaterial("IntroLeaves", new Color(0.52f, 0.64f, 0.18f), null, Vector2.one);
+        Material trunk = EnsureMaterial("IntroTrunk", new Color(0.20f, 0.09f, 0.04f), null, Vector2.one);
+        Material graveMat = EnsureMaterial("IntroGrave", Color.white,
+            LoadTexture($"{ModelsRoot}/graveyard/textures/stone1_albedo.png"), Vector2.one);
+        Material wallStone = EnsureMaterial("IntroWallStone", Color.white,
+            LoadTexture($"{ModelsRoot}/models/stone_wall/wall_stone.jpg"), new Vector2(2f, 2f));
 
         // -------------------------------------------------------------- mundo
         Transform world = NewContainer("World");
@@ -154,10 +153,10 @@ public static class IntroSceneAuthoring
 
         BuildStatue(world, statueMat);
         BuildGate(world, stone);
-        BuildCastle(world, cityMat, houseMat, stone);
+        BuildCastle(world);
         BuildGraveyard(world, graveMat);
-        BuildForest(world, trunk, foliageA, foliageB);
-        BuildCastleWall(world, stone);
+        BuildForest(world, trunk, leaves);
+        BuildCastleWall(world, wallStone);
 
         // Caballero cinemático (el modelo glTF se instancia en runtime a escala 0.5).
         GameObject playerHolder = new GameObject("Player");
@@ -334,51 +333,79 @@ public static class IntroSceneAuthoring
         glow.intensity = 0f;
     }
 
-    private static void BuildCastle(Transform world, Material cityMat, Material towerMat, Material stone)
+    private static void BuildCastle(Transform world)
     {
+        // Castillo ORIGINAL del menú de Godot (main_menu.gd::_build_world), replicado
+        // con los mismos assets medievales, rotaciones Y=180°, escalas y tintes planos.
         GameObject castle = new GameObject("Castle");
         castle.transform.SetParent(world, false);
-        castle.transform.position = new Vector3(0f, 0f, -28f);
-        castle.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        castle.transform.position = new Vector3(0f, 0f, -22f);
 
-        Mesh keepMesh = GetModelMesh($"{ModelsRoot}/models/city_house/city_house.obj");
-        Mesh towerMesh = GetModelMesh($"{ModelsRoot}/models/small_building/small_building.obj");
+        Material wallTint = EnsureMaterial("IntroCastleWall", HexColor("b9c2ce"), null, Vector2.one);
+        Material doorTint = EnsureMaterial("IntroCastleDoor", HexColor("7d5635"), null, Vector2.one);
+        Material bridgeTint = EnsureMaterial("IntroCastleBridge", HexColor("9a7a52"), null, Vector2.one);
+        Material wellTint = EnsureMaterial("IntroCastleWell", HexColor("6e7e8f"), null, Vector2.one);
+        Material largeTowerTint = EnsureMaterial("IntroCastleLargeTower", HexColor("c6ccd6"), null, Vector2.one);
+        Material pointyTint = EnsureMaterial("IntroCastlePointy", HexColor("b7bec9"), null, Vector2.one);
+        Material watchTint = EnsureMaterial("IntroCastleWatch", HexColor("d7c7ae"), null, Vector2.one);
+        Material bannerTint = EnsureMaterial("IntroCastleBanner", HexColor("caa24a"), null, Vector2.one);
 
-        if (keepMesh != null)
+        SpawnPiece(castle.transform, "WallEntrance.fbx", "Entrance",
+            new Vector3(0f, 0f, -9f), 180f, Vector3.one * 2.25f, new[] { wallTint });
+        SpawnPiece(castle.transform, "Door.fbx", "Door",
+            new Vector3(0f, 0.1f, -8.75f), 180f, Vector3.one * 2.15f, new[] { doorTint });
+        SpawnPiece(castle.transform, "Bridge.fbx", "Bridge",
+            new Vector3(0f, 0f, -2.6f), 0f, new Vector3(2f, 1.35f, 2.25f), new[] { bridgeTint });
+        SpawnPiece(castle.transform, "Well.fbx", "Well",
+            new Vector3(-6f, 0f, -2f), 0f, Vector3.one * 1.55f, new[] { wellTint });
+
+        foreach (float side in new[] { -1f, 1f })
         {
-            GameObject keep = AddMeshRenderer(castle.transform, "Keep", keepMesh, cityMat);
-            keep.transform.localPosition = new Vector3(2f, 0f, 0f);
-            keep.transform.localRotation = Quaternion.identity;
-            keep.transform.localScale = Vector3.one * 2f;
+            SpawnPiece(castle.transform, "LargeSquareTower.fbx", $"LargeTower{(side < 0 ? "L" : "R")}",
+                new Vector3(side * 7f, 0f, -10.5f), 180f, Vector3.one * 2.05f, new[] { largeTowerTint });
+            SpawnPiece(castle.transform, "PointyTower.fbx", $"PointyTower{(side < 0 ? "L" : "R")}",
+                new Vector3(side * 12f, 0f, -13f), 180f, Vector3.one * 1.9f, new[] { pointyTint });
+            SpawnPiece(castle.transform, "WatchTowerWRoof.fbx", $"WatchTower{(side < 0 ? "L" : "R")}",
+                new Vector3(side * 13.5f, 0f, -5f), 180f, Vector3.one * 1.6f, new[] { watchTint });
+            SpawnPiece(castle.transform, "Banner.fbx", $"Banner{(side < 0 ? "L" : "R")}",
+                new Vector3(side * 3.8f, 2.8f, -8.55f), 180f, Vector3.one * 2f, new[] { bannerTint });
         }
 
-        if (towerMesh != null)
+        foreach (float x in new[] { -10.5f, -8.8f, -5f, -3.2f, 3.2f, 5f, 8.8f, 10.5f })
         {
-            foreach ((string name, Vector3 localPos, float scale) in new[]
-            {
-                ("TowerL", new Vector3(-2f, 0f, -5.5f), 1.3f),
-                ("TowerR", new Vector3(-2f, 0f, 5.5f), 1.3f),
-                ("RearL", new Vector3(3.5f, 0f, -4f), 1.1f),
-                ("RearR", new Vector3(3.5f, 0f, 4f), 1.1f)
-            })
-            {
-                GameObject tower = AddMeshRenderer(castle.transform, name, towerMesh, towerMat);
-                tower.transform.localPosition = localPos;
-                tower.transform.localRotation = Quaternion.identity;
-                tower.transform.localScale = Vector3.one * scale;
-            }
+            SpawnPiece(castle.transform, "WallBricks.fbx", $"WallBrick{x:0.#}",
+                new Vector3(x, 0f, -10f), 180f, Vector3.one * 1.75f, new[] { wallTint });
         }
-
-        CreateBox(castle.transform, "BaseWall", new Vector3(0f, 0.5f, 0f), new Vector3(14f, 1f, 12f), stone);
 
         GameObject lightGo = new GameObject("CastleLight", typeof(Light));
         lightGo.transform.SetParent(castle.transform, false);
-        lightGo.transform.localPosition = new Vector3(0f, 6f, 3f);
+        lightGo.transform.localPosition = new Vector3(0f, 6f, 4f);
         Light light = lightGo.GetComponent<Light>();
         light.type = LightType.Point;
         light.color = new Color(0.75f, 0.85f, 1f);
-        light.range = 40f;
+        light.range = 45f;
         light.intensity = 0f;
+    }
+
+    private static Color HexColor(string hex)
+    {
+        ColorUtility.TryParseHtmlString("#" + hex, out Color color);
+        return color;
+    }
+
+    private static void SpawnPiece(Transform parent, string fileName, string name, Vector3 localPos, float yaw,
+        Vector3 scale, Material[] materials)
+    {
+        Mesh mesh = GetModelMesh($"{ModelsRoot}/medieval_buildings/{fileName}");
+        if (mesh == null)
+        {
+            return;
+        }
+
+        GameObject piece = AddMeshRenderer(parent, name, mesh, materials);
+        piece.transform.localPosition = localPos;
+        piece.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+        piece.transform.localScale = scale;
     }
 
     private static void BuildGraveyard(Transform world, Material material)
@@ -399,7 +426,7 @@ public static class IntroSceneAuthoring
         }
     }
 
-    private static void BuildForest(Transform world, Material trunk, Material foliageA, Material foliageB)
+    private static void BuildForest(Transform world, Material trunk, Material leaves)
     {
         Transform forest = new GameObject("Forest").transform;
         forest.SetParent(world, false);
@@ -414,12 +441,13 @@ public static class IntroSceneAuthoring
             treeGo.transform.localScale = Vector3.one * tree.scale;
             if (mesh != null)
             {
-                AddMeshRenderer(treeGo.transform, mesh, i % 2 == 0 ? foliageA : foliageB);
+                // Los OBJ de Godot traen MTL multi-material: submesh 0 = hojas, 1 = tronco.
+                AddMeshRenderer(treeGo.transform, mesh, new[] { leaves, trunk });
             }
         }
     }
 
-    private static void BuildCastleWall(Transform world, Material stone)
+    private static void BuildCastleWall(Transform world, Material wallStone)
     {
         Transform wallRoot = new GameObject("CastleWall").transform;
         wallRoot.SetParent(world, false);
@@ -434,11 +462,11 @@ public static class IntroSceneAuthoring
             module.transform.localScale = Vector3.one * 1.2f;
             if (moduleMesh != null)
             {
-                AddMeshRenderer(module.transform, moduleMesh, stone);
+                AddMeshRenderer(module.transform, moduleMesh, wallStone);
             }
             else
             {
-                CreateBox(module.transform, "Block", new Vector3(0f, 1.5f, 0f), new Vector3(3.6f, 3f, 0.8f), stone);
+                CreateBox(module.transform, "Block", new Vector3(0f, 1.5f, 0f), new Vector3(3.6f, 3f, 0.8f), wallStone);
             }
         }
     }
@@ -495,23 +523,35 @@ public static class IntroSceneAuthoring
 
     private static GameObject AddMeshRenderer(Transform parent, Mesh mesh, Material material)
     {
-        GameObject go = new GameObject("Mesh");
-        go.transform.SetParent(parent, false);
-        MeshFilter filter = go.AddComponent<MeshFilter>();
-        filter.sharedMesh = mesh;
-        MeshRenderer renderer = go.AddComponent<MeshRenderer>();
-        renderer.sharedMaterial = material;
-        return go;
+        return AddMeshRenderer(parent, "Mesh", mesh, new[] { material });
+    }
+
+    private static GameObject AddMeshRenderer(Transform parent, Mesh mesh, Material[] materials)
+    {
+        return AddMeshRenderer(parent, "Mesh", mesh, materials);
     }
 
     private static GameObject AddMeshRenderer(Transform parent, string name, Mesh mesh, Material material)
+    {
+        return AddMeshRenderer(parent, name, mesh, new[] { material });
+    }
+
+    /// <summary>Asigna materiales cíclicamente a todos los submeshes (respetando MTL multi-material de los OBJ).</summary>
+    private static GameObject AddMeshRenderer(Transform parent, string name, Mesh mesh, Material[] materials)
     {
         GameObject go = new GameObject(name);
         go.transform.SetParent(parent, false);
         MeshFilter filter = go.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         MeshRenderer renderer = go.AddComponent<MeshRenderer>();
-        renderer.sharedMaterial = material;
+        int count = mesh != null ? Mathf.Max(1, mesh.subMeshCount) : 1;
+        Material[] slots = new Material[count];
+        for (int i = 0; i < count; i++)
+        {
+            slots[i] = materials[i % materials.Length];
+        }
+
+        renderer.sharedMaterials = slots;
         return go;
     }
 

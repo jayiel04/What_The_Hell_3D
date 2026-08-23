@@ -108,6 +108,9 @@ public sealed class IntroCutsceneDirector : MonoBehaviour
         if (player != null)
         {
             player.localScale = Vector3.one * PlayerCutsceneScale;
+            // En Godot el nodo Player tiene basis (−1,0,0 / 0,1,0 / 0,0,−1) = giro Y 180°,
+            // necesario para que el caballero mire hacia −Z (hacia la puerta) al caminar.
+            player.localRotation = Quaternion.Euler(0f, 180f, 0f);
             player.gameObject.SetActive(false);
         }
 
