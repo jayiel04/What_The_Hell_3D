@@ -11,10 +11,43 @@ public sealed class CampaignAudioDirector : MonoBehaviour
     public AudioSource sfxSource;
 
     private CampaignLevelConfig config;
+    private static CampaignAudioDirector activeDirector;
 
     public void Configure(CampaignLevelConfig level)
     {
         config = level;
+    }
+
+    private void OnEnable()
+    {
+        if (activeDirector != null && activeDirector != this)
+        {
+            activeDirector.StopAllAudio();
+        }
+
+        activeDirector = this;
+    }
+
+    private void OnDisable()
+    {
+        if (activeDirector == this)
+        {
+            activeDirector = null;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (activeDirector == this)
+        {
+            activeDirector = null;
+        }
+    }
+
+    private void StopAllAudio()
+    {
+        if (ambientSource != null) ambientSource.Stop();
+        if (musicSource != null) musicSource.Stop();
     }
 
     private void Start()
@@ -23,6 +56,13 @@ public sealed class CampaignAudioDirector : MonoBehaviour
         {
             Debug.LogError("CampaignAudioDirector necesita un AudioSource creado desde Unity Editor.");
             return;
+        }
+
+        // Evita solapamiento si por algún motivo queda un director anterior vivo (p. ej. DontDestroyOnLoad)
+        if (activeDirector != null && activeDirector != this)
+        {
+            activeDirector.StopAllAudio();
+            activeDirector = this;
         }
 
         ambientSource.playOnAwake = false;
@@ -34,6 +74,11 @@ public sealed class CampaignAudioDirector : MonoBehaviour
             ambientSource.clip = ambientClip;
             ambientSource.Play();
         }
+        else
+        {
+            ambientSource.Stop();
+            ambientSource.clip = null;
+        }
 
         if (musicSource != null)
         {
@@ -43,8 +88,19 @@ public sealed class CampaignAudioDirector : MonoBehaviour
             musicSource.spatialBlend = 0f;
             if (musicClip != null)
             {
+                // Si por error ambient y música apuntan al mismo clip, prioriza música
+                if (ambientClip != null && ambientClip == musicClip)
+                {
+                    ambientSource.Stop();
+                }
+
                 musicSource.clip = musicClip;
                 musicSource.Play();
+            }
+            else
+            {
+                musicSource.Stop();
+                musicSource.clip = null;
             }
         }
     }

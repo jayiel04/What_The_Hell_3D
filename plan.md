@@ -170,7 +170,7 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 - [x] Portar pausa, reanudar, reiniciar nivel y salir al menú respetando el tiempo pausado.
 - [x] Crear la introducción con las 13 líneas originales de Godot, voces por línea (`Audio/Source/dialogue/s*.mp3`), fade visual y skip; decisión documentada: secuencia por coroutine en lugar de Timeline (equivalente funcional, verificable y sin dependencias adicionales).
 - [x] Transición al nivel 1 y líneas de texto operativas con voces vinculadas.
-- [x] `CampaignAudioDirector` con AudioMixer (`WhatTheHellMixer.mixer`, grupos Master/Music/Ambience/SFX), música por nivel (level 1–3.mp3), ambiente (ambiente 1.mp3), SFX de combate y narración de victoria vinculados desde Editor.
+- [x] `CampaignAudioDirector` con AudioMixer (`WhatTheHellMixer.mixer`, grupos Master/Music/Ambience/SFX), música por nivel (level 1–3.mp3) y SFX de combate/narración vinculados; en niveles `ambientClip` queda a `null` para evitar dos canciones a la vez (en Godot cada nivel solo reproduce su `level X.mp3`; `ambiente 1.mp3` es la música del menú, no del nivel — bug de autoría corregido y verificado con test `Nivel01_SoloUnaPistaMusical`). Singleton anti-solapamiento añadido en `CampaignAudioDirector.cs`.
 
 **Salida actual:** `MainMenu`, `Intro` y `Victory` tienen cámara serializada y fueron ejecutadas visualmente; menú, subtítulos, HUD, pausa y retorno funcionan mediante los controladores actuales. La integración UGUI/Canvas, Timeline, voces, AudioMixer y audio final sigue pendiente.
 
@@ -185,6 +185,30 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 - [x] Generada build de prueba Linux64 (`Builds/Test/WhatTheHell3D.x86_64`, 232 MB, 0 errores) con arranque verificado; instalación, controles y limitaciones documentadas en `contexto.md`.
 
 **Salida actual:** GUIDs, referencias, Build Settings, importación/deserialización, Console y Play Mode fueron revisados en Unity Editor. La build de prueba y las mediciones de rendimiento siguen pendientes.
+
+### Fase 9 — Cinemática de intro 3D (paridad con `intro_story_3d.tscn`)
+
+Referencia Godot: `scenes/cinematics/intro/intro_story_3d.tscn` + `scripts/cinematics/intro_story_3d.gd` (292 líneas, timeline de 7 escenas). La intro actual de Unity solo muestra subtítulos+voces sobre fondo negro; esta fase reconstruye la cinemática 3D completa.
+
+**Inventario ya verificado (todo disponible en Unity):**
+- Escenario: `statue.obj`, `city_house.obj`, `small_building.obj`, `Tree1–4.obj`, `Bush1–3.obj`, `Rock1–3.obj`, `Grass1–3.obj`, hongos (`amanita.obj` etc.), texturas (`cobblestone_diff.jpg`, `wall_stone.jpg`, `backdrop_hills.png`) en `Art/Source/models|nature_pack|mushroom_pack`.
+- Caballero: `Knight_Male.gltf` (ya cargado vía glTFast con clips Walk/Idle).
+- Audio: `ambience/wind.mp3`, `sfx/bell.mp3`, `sfx/breath.mp3`, `sfx/footsteps_stone.mp3` y 15 voces `dialogue/s1_line1.mp3 … s7_line2.mp3`.
+- Constantes del timeline: cámara inicial `(0, 3.5, 7)` → wake `(0, 2.2, 4.5)`; jugador escala 0.5; despertar camina z 4.2→0 en 2.8 s; tour por 3 puntos; caminata larga z→−16.5 en 12.6 s; puerta z=−18 con glow hasta energía 2.5 y luz del castillo 3.0.
+
+Tareas:
+
+- [x] Construir el escenario 3D authorado de la Intro con `IntroSceneBuilder` (Editor): piso de adoquín, estatuas, casas, muralla/puerta (Gate) en z=−18, castillo al fondo, vegetación (árboles/bustos/rocas/hierba/hongos) y backdrop de colinas, replicando posiciones clave de la escena Godot.
+- [x] Añadir luces cinemáticas: `MoonLight` (Directional, energía animada 0→0.65), `Gate/Glow` (Point, 0→2.5) y `Castle/CastleLight` (Point, 0→3.0), más niebla/ambiente nocturno equivalente al Environment de Godot.
+- [x] Colocar caballero cinemático (instancia glTFast a escala 0.5) controlado por un nuevo componente `IntroCutsceneDirector` (runtime, coroutines + `Mathf.Lerp`/`SmoothStep`, sin Timeline para mantener cero dependencias nuevas).
+- [x] Implementar el timeline de 7 escenas con tiempos exactos de Godot: S1 negro+subtítulos → S2 fade-in 2 s + reveal luna/cámara 6 s + campana → S3 despertar (caminar 4.2→0 en 2.8 s con pasos en bucle, luego Idle) → S4 tour silencioso por 3 puntos (2.2 s c/u) → S5 caminata larga 12.6 s con cámara siguiendo a 4.5 m → S6 llegada a puerta (glow/luz suben, ambiente sube a −2 dB) → S7 cierre "Levantate." → fade out 0.8 s → cargar CampaignLevel01.
+- [x] Cablear audio de cinemática: viento y campana en bucle desde `_ready` (campana se detiene al final de S2), respiración al iniciar S3, pasos en bucle durante caminatas (se detienen al parar), voces por línea sincronizadas con subtítulos con fundido 0.6 s (hold = longitud del clip de voz).
+- [x] Subtítulos UGUI con fade in/out (0.6 s) y hint "Enter para omitir"; skip con Enter/Esc que mata tweens y salta directo al nivel 1 (incluye fade rápido como en `_finish_intro(skip=true)`).
+- [x] Actualizar `AuthorAll`/builder para autoría reproducible de la escena Intro y re-ejecutarla; mantener la escena en YAML texto sin NavMesh embebido ni binarios.
+- [x] Pruebas Play Mode dedicadas: timeline avanza por las 7 escenas con tiempos aproximados, skip funciona desde cualquier punto, voces/subtítulos no se solapan, y transición final carga `CampaignLevel01`; suite completa en verde.
+- [~] Validación visual manual contra Godot (capturas lado a lado) pendiente de sesión interactiva; build Linux64 de prueba completada (254 MB, 0 errores, suite 14/14).
+
+**Salida esperada:** al pulsar «Nueva partida» se reproduce la cinemática 3D completa con movimientos de cámara, caballero caminando/animado, narrador con las 15 líneas y audio ambiental, omitible con Enter, entrando al nivel 1 idéntico al original.
 
 ## 6. Obstáculos principales y mitigaciones
 
@@ -227,6 +251,7 @@ Este documento define objetivos, fases, obstáculos y criterios de aceptación. 
 5. Generación completa de los niveles 1–3.
 6. Menús, HUD, pausa, cinemática y audio.
 7. Paridad, rendimiento, build y documentación.
+8. Fase 9 — Cinemática de intro 3D (siguiente bloque activo).
 
 La regla de avance es no continuar con el siguiente bloque si el bloque anterior no tiene una prueba reproducible y un criterio de salida verificable.
 
@@ -251,4 +276,6 @@ La regla de avance es no continuar con el siguiente bloque si el bloque anterior
 - **Siguiente paso bloqueante:** convertir la UI IMGUI actual a Canvas/UGUI authorado, completar importer GLTF/GLB, NavMesh, animaciones/combate, Timeline/audio, pruebas de completar/reiniciar, build y métricas de rendimiento.
 - **Sesión 2026-08-22 (cierre de fases 4–8):** migración de UI a Canvas/UGUI authorado en las seis escenas (menú, HUD con barra de salud, pausa, subtítulos y victoria); glTFast 6.2.0 instalado y validación automatizada de importación de los 6 personajes y 8 animaciones; combate ampliado con combo, parry, knockback, hit-stun, wind-up/strike/recovery y proyectil de bruja (`WitchProjectile.prefab`); NavMesh horneado por nivel como asset externo; AudioMixer con grupos Master/Music/Ambience/SFX y música/ambiente/voces/SFX vinculados; intro restaurada a las 13 líneas originales con voces y fade; scripts divididos en un archivo por clase para serialización estable bajo `WhatTheHell3D.Runtime.asmdef`; builder editor reproducible `CampaignLevelSceneBuilder` que reconstruye los tres niveles desde los `CampaignLevelConfig`; suite `CampaignFlowTests` 9/9 superada; validaciones estáticas 0 fallos; build Linux64 232 MB con arranque verificado.
 - **Sesión 2026-08-22 (mallas visibles):** el jugador ahora carga `Knight_Male.gltf` desde `StreamingAssets` con animación por estado (Idle/Walk/Run/Jump/SwordSlash/Roll/RecieveHit/Death); los enemigos cargan sus 5 mallas según `CampaignEnemyKind` (Goblin_M/F, Zombie_M/F, Witch) con selección de variante por posición y animación (Patrol→Walk/Run, WindUp→Punch/Shoot_OneHanded, Strike→SwordSlash, Stunned→RecieveHit, Death). Suite ampliada a 11/11 (nuevos tests de malla de jugador y de todos los enemigos por nivel); build Linux64 244 MB con las 6 mallas empaquetadas.
-- **Deuda documentada restante:** sustitución de primitivas por modelos finales rigueados (animaciones conectadas al Animator del caballero/enemigos), materiales finales de agua/lava/VFX, Timeline opcional, métricas de rendimiento y playtest manual comparativo contra Godot.
+- **Sesión 2026-08-22 (audio):** corregido bug de dos canciones en nivel 1 — `CampaignAuthoringTools` asignaba `ambiente 1.mp3` (música del menú en Godot) como `ambientClip` de cada nivel y sonaba junto a `level 1.mp3`; en Godot cada nivel solo reproduce su `LEVEL_MUSIC[level_id-1]`. Se dejó `ambientClip=null` en los tres `CampaignLevel` y se añadió singleton anti-solapamiento en `CampaignAudioDirector.cs` (`activeDirector`). Suite 12/12 con nuevo test `Nivel01_SoloUnaPistaMusical`; build Linux64 238 MB.
+- **Sesión 2026-08-22 (Fase 9 — cinemática intro 3D):** reconstruida la cinemática completa de Godot (`intro_story_3d.gd`/`.tscn`) en Unity. Nuevo runtime `IntroCutsceneDirector.cs` (Cinematics/) con el timeline de 7 escenas y tiempos exactos (S2 reveal luna/cámara 6 s tras S1; S3 despertar z 4.2→0 en 2.8 s; S4 tour 3×2.2 s; S5 caminata 16.5 uds/12.6 s con cámara siguiendo; S6 glow portal 0→2.5 y castillo 0→3.0; fades 0.6 s), caballero glTFast a escala 0.5 con Walk/Idle y velocidad animada proporcional al desplazamiento, audio completo (viento+campana en bucle, respiración, pasos en bucle durante caminatas, 15 voces sincronizadas con subtítulos usando la longitud real del clip) y skip Enter/Esc/botón desde cualquier punto. Nuevo builder editor `IntroSceneAuthoring.cs`: escenario authorado con posiciones extraídas del .tscn (piso adoquín 100×600, backdrop de colinas, estatua, puerta con pilares/arco/glow, castillo Keep/Towers/Rears + muro base, 28 tumbas GraveStone_*.fbx, 39 árboles, 24 módulos de muralla, niebla 0.006 y ambiente nocturno); materiales persistidos como assets en `Materials/Intro/`; reemplazó a `IntroSceneController` (eliminado, `SceneBootstrap` ahora configura el director). Suite PlayMode 14/14 (nuevos tests de carga de modelo/audio/timeline y de skip→CampaignLevel01); validación estática 0 fallos (378 refs de script); build Linux64 254 MB.
+- **Deuda documentada restante: sustitución de primitivas por modelos finales rigueados (animaciones conectadas al Animator del caballero/enemigos), materiales finales de agua/lava/VFX, Timeline opcional, métricas de rendimiento y playtest manual comparativo contra Godot.

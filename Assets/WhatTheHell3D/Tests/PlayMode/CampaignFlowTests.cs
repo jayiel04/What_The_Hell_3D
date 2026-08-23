@@ -66,6 +66,24 @@ namespace WhatTheHell3D.Tests
         }
 
         [UnityTest]
+        public IEnumerator Nivel01_SoloUnaPistaMusical()
+        {
+            yield return LoadScene(Level01);
+            yield return null;
+            CampaignAudioDirector director = Object.FindFirstObjectByType<CampaignAudioDirector>();
+            Assert.IsNotNull(director, "El nivel debe tener CampaignAudioDirector.");
+            Assert.IsNull(director.ambientClip,
+                "Level01 no debe tener ambientClip (era 'ambiente 1.mp3' y causaba dos canciones a la vez; en Godot solo suena level 1.mp3).");
+            Assert.IsNotNull(director.musicClip, "Debe tener musicClip level 1.mp3.");
+            // Esperar a que Start() inicie la reproducción (puede tardar 1-2 frames por async)
+            for (int i = 0; i < 30; i++) yield return null;
+            Assert.IsFalse(director.ambientSource != null && director.ambientSource.isPlaying,
+                "No debe sonar ambient en el nivel (segunda canción).");
+            Assert.IsTrue(director.musicSource != null && director.musicSource.isPlaying,
+                "Debe sonar solo la música del nivel.");
+        }
+
+        [UnityTest]
         public IEnumerator Enemigos_MuestranMallaSegunKind()
         {
             yield return LoadScene(Level01);
@@ -102,6 +120,90 @@ namespace WhatTheHell3D.Tests
                 Assert.IsFalse(skin.gameObject.name == "EnemyVisual",
                     "La malla validada debe ser la del modelo glTF, no la cápsula de respaldo.");
             }
+        }
+
+        [UnityTest]
+        public IEnumerator Intro_Cutscene_TimelineAvanzaYModeloCarga()
+        {
+            yield return LoadScene("Assets/WhatTheHell3D/Scenes/Intro.unity");
+
+            IntroCutsceneDirector director = Object.FindFirstObjectByType<IntroCutsceneDirector>();
+            Assert.IsNotNull(director, "La escena Intro debe contener IntroCutsceneDirector.");
+            Assert.AreEqual(15, director.lines.Length, "El timeline debe tener las 15 líneas del narrador.");
+            Assert.IsNotNull(director.moonLight, "Debe existir MoonLight.");
+            Assert.IsNotNull(director.gateGlow, "Debe existir el Glow del portal.");
+            Assert.IsNotNull(director.castleLight, "Debe existir la luz del castillo.");
+
+            // El modelo del caballero debe cargarse (glTFast) y la escala es 0.5.
+            SkinnedMeshRenderer knightSkin = null;
+            for (int i = 0; i < 300 && knightSkin == null; i++)
+            {
+                if (director.player != null)
+                {
+                    knightSkin = director.player.GetComponentInChildren<SkinnedMeshRenderer>();
+                }
+
+                yield return null;
+            }
+
+            Assert.IsNotNull(knightSkin, "El caballero cinemático debe cargar su malla glTF.");
+            Assert.IsTrue(director.IsModelLoaded);
+
+            // Audio inicial: viento y campana en bucle (como en _ready de Godot).
+            Assert.IsNotNull(director.ambience.clip, "Ambience debe tener wind.mp3.");
+            Assert.IsTrue(director.ambience.loop, "El viento debe estar en bucle.");
+            Assert.IsNotNull(director.bell.clip, "Bell debe tener bell.mp3.");
+            Assert.IsTrue(director.bell.loop, "La campana debe estar en bucle.");
+
+            // Avance del timeline: la escena 2 revela la luna (0→0.65) y mueve la cámara.
+            // La S1 dura ~10 s (dos voces + fades), así que se hace polling hasta ver la subida.
+            float moonStart = director.moonLight.intensity;
+            Vector3 cameraStart = director.cutsceneCamera.transform.position;
+            float timeout = Time.time + 40f;
+            while (Time.time < timeout && director.moonLight.intensity <= moonStart + 0.05f)
+            {
+                yield return null;
+            }
+
+            Assert.Greater(director.moonLight.intensity, moonStart,
+                "MoonLight debe animarse de 0 a 0.65 durante la escena 2.");
+            Assert.AreNotEqual(cameraStart, director.cutsceneCamera.transform.position,
+                "La cámara debe moverse hacia la posición de despertar.");
+            Assert.LessOrEqual(director.moonLight.intensity, 0.66f,
+                "La energía de la luna no debe superar 0.65.");
+
+            // El jugador cinemático está a escala 0.5 (constante de Godot).
+            Assert.AreEqual(0.5f, director.player.localScale.x, 0.01f, "Escala del caballero debe ser 0.5.");
+
+            // La cámara debe mirar hacia −Z (como Godot) para ver puerta/castillo/estatua.
+            Assert.Less(director.cutsceneCamera.transform.forward.z, -0.9f,
+                "La cámara debe mirar hacia −Z (rotación Y=180°); si no, la pantalla se ve vacía/negra.");
+            Assert.IsFalse(director.fadeImage.color.a > 0.95f,
+                "Tras la escena 2 el fade debe haberse levantado (no pantalla negra).");
+        }
+
+        [UnityTest]
+        public IEnumerator Intro_Skip_CargaNivel01()
+        {
+            yield return LoadScene("Assets/WhatTheHell3D/Scenes/Intro.unity");
+            yield return null;
+
+            IntroCutsceneDirector director = Object.FindFirstObjectByType<IntroCutsceneDirector>();
+            Assert.IsNotNull(director, "La escena Intro debe contener IntroCutsceneDirector.");
+
+            director.Skip();
+
+            float timeout = Time.realtimeSinceStartup + 15f;
+            while (!SceneManager.GetActiveScene().path.Contains("CampaignLevel01")
+                   && Time.realtimeSinceStartup < timeout)
+            {
+                yield return null;
+            }
+
+            Assert.IsTrue(SceneManager.GetActiveScene().path.Contains("CampaignLevel01"),
+                $"Skip debe cargar CampaignLevel01, escena activa: {SceneManager.GetActiveScene().path}");
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            Assert.IsNotNull(player, "Al entrar por skip, el nivel 1 debe tener su jugador.");
         }
 
         [UnityTest]

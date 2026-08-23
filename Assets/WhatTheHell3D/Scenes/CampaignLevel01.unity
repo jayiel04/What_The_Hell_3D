@@ -1984,7 +1984,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0c4d6e8f0a91573c5e82a8b9d1f4067, type: 3}
   m_Name: 
   m_EditorClassIdentifier: WhatTheHell3D.Runtime::CampaignAudioDirector
-  ambientClip: {fileID: 8300000, guid: dde82967e5daa7ff9b6a88738e20a5de, type: 3}
+  ambientClip: {fileID: 0}
   ambientVolume: 0.35
   ambientSource: {fileID: 751093818}
   musicSource: {fileID: 1602821043}

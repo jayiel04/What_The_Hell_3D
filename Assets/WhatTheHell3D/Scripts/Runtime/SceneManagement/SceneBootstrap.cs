@@ -34,10 +34,10 @@ public sealed class SceneBootstrap : MonoBehaviour
                 }
                 break;
             case RuntimeSceneRole.Intro:
-                IntroSceneController intro = GetComponent<IntroSceneController>();
+                IntroCutsceneDirector intro = GetComponent<IntroCutsceneDirector>();
                 if (intro == null)
                 {
-                    Debug.LogError("La escena de intro debe contener un IntroSceneController creado desde Unity Editor.");
+                    Debug.LogError("La escena de intro debe contener un IntroCutsceneDirector creado desde Unity Editor.");
                 }
                 else
                 {

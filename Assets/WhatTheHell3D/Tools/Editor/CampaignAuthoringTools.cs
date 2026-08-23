@@ -36,7 +36,7 @@ public static class CampaignAuthoringTools
         AudioMixer mixer = CreateAudioMixerAsset();
 
         AuthorMenuScene(mixer);
-        AuthorIntroScene();
+        IntroSceneAuthoring.AuthorIntroScene3D();
         AuthorVictoryScene();
         foreach (string level in new[] { "CampaignLevel01", "CampaignLevel02", "CampaignLevel03" })
         {
@@ -100,88 +100,7 @@ public static class CampaignAuthoringTools
 
     // ----------------------------------------------------------------- intro
 
-    private static void AuthorIntroScene()
-    {
-        OpenScene("Intro");
-        IntroSceneController controller = FindSingle<IntroSceneController>();
-        if (controller == null)
-        {
-            Debug.LogError("[Authoring] Intro no contiene IntroSceneController.");
-            return;
-        }
-
-        Canvas canvas = EnsureCanvas("UICanvas", new Color(0.01f, 0.01f, 0.02f, 1f));
-        Text subtitle = CreateText(canvas.transform, "SubtitleText", "", 30, Color.white);
-        Anchor(subtitle.rectTransform, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(900f, 120f));
-        subtitle.alignment = TextAnchor.MiddleCenter;
-
-        Image fade = CreateImage(canvas.transform, "FadeImage", new Color(0f, 0f, 0f, 0f));
-        RectTransform fadeRect = (RectTransform)fade.transform;
-        fadeRect.anchorMin = Vector2.zero;
-        fadeRect.anchorMax = Vector2.one;
-        fadeRect.offsetMin = Vector2.zero;
-        fadeRect.offsetMax = Vector2.zero;
-        fadeRect.SetAsLastSibling();
-        fade.raycastTarget = false;
-
-        Button skip = CreateButton(canvas.transform, "SkipButton", "Saltar", Vector2.zero);
-        RectTransform skipRect = (RectTransform)skip.transform;
-        skipRect.anchorMin = new Vector2(1f, 0f);
-        skipRect.anchorMax = new Vector2(1f, 0f);
-        skipRect.anchoredPosition = new Vector2(-120f, 44f);
-        skip.transform.SetAsLastSibling();
-
-        AudioSource voiceSource = GameObject.Find("IntroVoiceSource")?.GetComponent<AudioSource>();
-        if (voiceSource == null)
-        {
-            voiceSource = new GameObject("IntroVoiceSource").AddComponent<AudioSource>();
-        }
-
-        voiceSource.playOnAwake = false;
-        voiceSource.spatialBlend = 0f;
-
-        controller.subtitleText = subtitle;
-        controller.skipButton = skip;
-        controller.fadeImage = fade;
-        controller.voiceSource = voiceSource;
-        controller.lines = BuildIntroLines();
-        EditorUtility.SetDirty(controller);
-
-        SaveOpenScene("Intro");
-    }
-
-    private static IntroSceneController.SubtitleLine[] BuildIntroLines()
-    {
-        (string text, float duration, string clipPath)[] definitions =
-        {
-            ("Hubo un tiempo en que la luz protegia estas tierras...", 3.0f, "s1_line1"),
-            ("Hasta que una sombra la devoro por completo.", 3.0f, "s1_line2"),
-            ("Los reinos cayeron uno tras otro.", 1.8f, "s2_line1"),
-            ("Sus guardianes lucharon... y desaparecieron.", 1.8f, "s2_line2"),
-            ("Solo quedaron ruinas... y silencio.", 2.2f, "s2_line3"),
-            ("No recuerdas quien eres...", 2.2f, "s3_line1"),
-            ("Ni por que despertaste aqui.", 2.4f, "s3_line2"),
-            ("Pero mientras una llama siga encendida...", 2.2f, "s5_line1"),
-            ("...la oscuridad nunca habra vencido.", 2.6f, "s5_line2"),
-            ("Si aun respiras...", 2.2f, "s6_line1"),
-            ("...es porque el destino aun no ha terminado contigo.", 2.8f, "s6_line2"),
-            ("Levantate.", 1.8f, "s7_line1"),
-            ("La ultima esperanza... camina contigo.", 3.0f, "s7_line2")
-        };
-
-        IntroSceneController.SubtitleLine[] result = new IntroSceneController.SubtitleLine[definitions.Length];
-        for (int i = 0; i < definitions.Length; i++)
-        {
-            result[i] = new IntroSceneController.SubtitleLine
-            {
-                text = definitions[i].text,
-                duration = definitions[i].duration,
-                voice = LoadClip($"Audio/Source/dialogue/{definitions[i].clipPath}.mp3")
-            };
-        }
-
-        return result;
-    }
+    // La autoría de la intro 3D vive en IntroSceneAuthoring.cs (Fase 9).
 
     // --------------------------------------------------------------- victoria
 
@@ -370,7 +289,10 @@ public static class CampaignAuthoringTools
         sfx.playOnAwake = false;
         sfx.spatialBlend = 0f;
 
-        director.ambientClip = LoadClip("Audio/Source/legacy_sounds/ambiente 1.mp3");
+        // En Godot cada nivel solo reproduce su música de nivel (level 1/2/3.mp3).
+        // "ambiente 1.mp3" es la música del menú, no del nivel; si se asigna aquí
+        // suenan dos canciones a la vez. Para los niveles lo dejamos sin ambient.
+        director.ambientClip = null;
         director.musicClip = LoadClip($"Audio/Source/legacy_sounds/{MusicForLevel(sceneName)}");
         director.ambientSource = ambient;
         director.musicSource = music;
@@ -461,6 +383,16 @@ public static class CampaignAuthoringTools
     }
 
     // ------------------------------------------------------------- utilidades
+
+    /// <summary>Wrappers públicos para otras herramientas de autoría (p. ej. IntroSceneAuthoring).</summary>
+    public static Canvas EnsureCanvasPublic(string name, Color? background) => EnsureCanvas(name, background);
+    public static Text CreateTextPublic(Transform parent, string name, string content, int size, Color color,
+        FontStyle style = FontStyle.Normal) => CreateText(parent, name, content, size, color, style);
+    public static Image CreateImagePublic(Transform parent, string name, Color color) => CreateImage(parent, name, color);
+    public static Button CreateButtonPublic(Transform parent, string name, string label, Vector2 anchoredPosition)
+        => CreateButton(parent, name, label, anchoredPosition);
+    public static void AnchorPublic(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 position, Vector2 size)
+        => Anchor(rect, anchorMin, anchorMax, position, size);
 
     [MenuItem("WhatTheHell3D/Autoría/Autoría de niveles de campaña (HUD, pausa, audio, NavMesh)")]
     public static void AuthorCampaignLevelsFromMenu()

@@ -248,3 +248,48 @@ La malla del caballero **sí se había transferido de Godot a Unity**: `Knight_M
 ### Ajustes visuales pendientes (si se ven girados/pequeños)
 - `modelYawOffsetDegrees` y `modelScale` expuestos en `EnemyController` y `PlayerController` por instancia.
 - Equipar armas en hueso `Fist.R` vía socket (pendiente de retarget humanoide si se quieren mezclar animaciones de distintas fuentes).
+
+## Doble música en nivel 1 corregida — 2026-08-22
+
+### Causa (paridad Godot)
+- En Godot `campaign_level_audio.gd` (`_setup_audio`) solo reproduce `LEVEL_MUSIC[level_id-1]` (`level 1/2/3.mp3`) por nivel; `ambiente 1.mp3` es la música del **menú** (`main_menu.gd: _setup_music`), no del nivel.
+- En Unity `CampaignAuthoringTools.AuthorAudio` asignaba `director.ambientClip = ambiente 1.mp3` **y** `musicClip = level X.mp3` para cada `CampaignLevel`, por lo que en `CampaignAudioDirector.Start()` sonaban dos pistas a la vez (dos canciones).
+
+### Parche
+- `Assets/WhatTheHell3D/Tools/Editor/CampaignAuthoringTools.cs:373` → `ambientClip = null` para niveles (comentado para evitar regresión).
+- `Assets/WhatTheHell3D/Scenes/CampaignLevel*.unity` parcheadas directamente (`ambientClip: {fileID: 0}`) para no requerir re-horneo de NavMesh.
+- `Assets/WhatTheHell3D/Scripts/Runtime/Audio/CampaignAudioDirector.cs` reforzado: patrón singleton `activeDirector` con `OnEnable`/`OnDisable`/`StopAllAudio()` y `Start()` detiene cualquier director previo y garantiza `ambientSource.Stop()` si `ambientClip==null`; evita solapamiento por escena aditiva o `DontDestroyOnLoad` residual.
+
+### Verificación
+- Suite PlayMode 12/12 (nuevo `Nivel01_SoloUnaPistaMusical` comprueba `ambientClip==null`, `musicClip!=null`, `ambientSource.isPlaying==false` y `musicSource.isPlaying==true`).
+- Build Linux64 238 MB, 0 errores.
+
+## Fase 9 — Cinemática de intro 3D — 2026-08-22
+
+### Referencia Godot replicada
+`scenes/cinematics/intro/intro_story_3d.tscn` (653 nodos) + `scripts/cinematics/intro_story_3d.gd`. Se extrajeron del `.tscn`: posiciones de las 28 tumbas, 39 árboles y 24 módulos de muralla, transformaciones de Gate/Castle/Statue, volúmenes en dB de los 5 AudioStreamPlayer y constantes del timeline.
+
+### Runtime nuevo
+- `Scripts/Runtime/Cinematics/IntroCutsceneDirector.cs`: timeline de 7 escenas con coroutines y lerp manual (sin Timeline package). Constantes exactas de Godot: cámara inicial (0,3.5,7)→wake (0,2.2,4.5) en 6 s; jugador escala 0.5; despertar z 4.2→0 en 2.8 s (velocidad de animación Walk proporcional = walkSpeed/2.8); tour por (1.8,2,-1.5)/(-1.8,1.6,-0.5)/(2.4,2,-4) a 2.2 s c/u; caminata larga z→−16.5 en 12.6 s con cámara siguiendo a 4.5 m (los tweens continúan dentro de la S6 como en Godot); glow portal 0→2.5/2.5 s, castillo 0→3.0/3.5 s; fades de subtítulo 0.6 s con hold = longitud real del clip de voz.
+- Skip: Enter/Esc (Input System) o botón «Enter para omitir» → detiene todo y carga `CampaignLevel01.unity` inmediatamente (equivalente a `_finish_intro(skip=true)`).
+- Carga del caballero vía glTFast desde `StreamingAssets/Characters/Knight_Male.gltf`, Animation legacy con Idle/Walk en bucle.
+- `SceneBootstrap` ahora configura `IntroCutsceneDirector` (el viejo `IntroSceneController` fue eliminado junto con su script).
+
+### Builder editor nuevo
+- `Tools/Editor/IntroSceneAuthoring.cs` (`WhatTheHell3D > Autoría > Autoría de intro 3D`, idempotente): piso de adoquín (textura cobblestone), backdrop de colinas (URP/Unlit), estatua (statue.obj), puerta z=−18 (pilares+arco+Glow), castillo z=−28 (Keep=city_house ×2, Towers/Rears=small_building, muro base, CastleLight), cementerio (28 GraveStone_*.fbx), bosque (39 Tree1–4.obj), muralla (24 WallBricks.fbx), MoonLight direccional, MainCamera+AudioListener, 5 AudioSources (wind/bell/breath/footsteps/voces) y UI UGUI. Materiales persistidos como assets en `Materials/Intro/*.mat`. `CampaignAuthoringTools.AuthorAll` lo invoca.
+
+### Verificación
+- Suite PlayMode **14/14**: `Intro_Cutscene_TimelineAvanzaYModeloCarga` (15 líneas, luces presentes, modelo glTF cargado, viento+campana en bucle, luna se anima 0→≤0.65 con polling ≤40 s porque la S1 dura ~10 s, cámara se mueve, escala 0.5) y `Intro_Skip_CargaNivel01`.
+- Compilación C#: 0 errores. Validación estática: 0 fallos (378 refs de script, GUIDs, Build Settings, YAML).
+- Build Linux64: 254 MB, 0 errores.
+
+### Desviaciones conocidas respecto a Godot
+- El escenario usa primitivas/materiales planos para pilares/arco/muro base (en Godot eran cajas escaladas equivalentes); los modelos OBJ/FBX sí son los originales.
+- FOV de cámara 70 (Godot usaba el default ~75 sin especificar en la intro).
+- Volumen lineal aproximado para wind (Godot 0 dB): 0.8 en Unity para evitar saturación.
+
+### Corrección post-playtest (pantalla negra sin cambios de plano)
+Dos causas encontradas y corregidas en `IntroSceneAuthoring.cs`:
+1. **Cámara mirando al vacío**: en Unity el forward de la cámara es +Z, pero todo el escenario (estatua z=−7, puerta z=−18, castillo z=−28) está en −Z; Godot mira hacia −Z por defecto. Fix: `MainCamera` con rotación Y=180°.
+2. **Fondo opaco del canvas**: `EnsureCanvas("UICanvas", negro)` creaba una Image de fondo a pantalla completa que seguía negra aunque el fade subiera. Fix: canvas sin fondo (`null`) y se elimina cualquier hijo `Background` residual.
+Se añadieron aserciones anti-regresión al test `Intro_Cutscene_TimelineAvanzaYModeloCarga`: `camera.forward.z < −0.9` y `fadeImage.alpha ≤ 0.95` tras la S2. Re-verificado: suite 14/14, build 254 MB 0 errores.
