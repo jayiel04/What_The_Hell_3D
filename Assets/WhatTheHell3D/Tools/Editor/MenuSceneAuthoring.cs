@@ -61,27 +61,31 @@ public static class MenuSceneAuthoring
         moonLight.color = HexColor("dfe9ff");
         moonLight.intensity = 0.95f;
         moonLight.shadows = LightShadows.Soft;
-        moonLightGo.transform.rotation = Quaternion.Euler(-18f, -12f, 0f);
+        // En Godot la luz apunta por −Z del nodo; en Unity por +Z.
+        // Se compensa el yaw para que ilumine la fachada del castillo (−Z mundo).
+        moonLightGo.transform.rotation = Quaternion.Euler(-18f, 168f, 0f);
 
         // Resplandor de luna (#cfe2ff, 0.9, rango 28).
-        AddPointLight(world, "MoonGlow", new Vector3(10.5f, 13.8f, -22f),
+        AddPointLight(world, "MoonGlow", new Vector3(-10.5f, 13.8f, -22f),
             HexColor("cfe2ff"), 0.9f, 28f);
 
         // Disco lunar NASA: SphereMesh radius 2.35 → esfera Unity escalada ×4.7.
+        // Unlit: la luna del original es emisiva y nunca se ve negra.
         Material moonMat = EnsureMaterial("MenuMoon", Color.white,
-            LoadTexture($"{SourceRoot}/environment/moon/moon_nasa_lro_4k.png"), Vector2.one);
+            LoadTexture($"{SourceRoot}/environment/moon/moon_nasa_lro_4k.png"), Vector2.one, unlit: true);
         GameObject moonDisc = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         moonDisc.name = "MoonNASA";
         Object.DestroyImmediate(moonDisc.GetComponent<Collider>());
         moonDisc.transform.SetParent(world, false);
-        moonDisc.transform.position = new Vector3(10.5f, 13.8f, -22f);
+        moonDisc.transform.position = new Vector3(-10.5f, 13.8f, -22f);
         moonDisc.transform.localScale = Vector3.one * 4.7f;
         ApplyMaterial(moonDisc, moonMat);
         moonDisc.AddComponent<MoonSpinner>();
 
         BuildStarFields(world);
 
-        // Piso 40×0.5×35 en (0,−0.35,−8), color #111820.
+        // Piso 40×0.5×35 en (0,−0.35,−8), color #111820, Lit para que las
+        // antorchas creen el charco de luz cálida del original.
         Material floorMat = EnsureMaterial("MenuFloor", HexColor("111820"), null, Vector2.one);
         CreateBox(world, "Floor", new Vector3(0f, -0.35f, -8f), new Vector3(40f, 0.5f, 35f), floorMat);
 
@@ -166,23 +170,32 @@ public static class MenuSceneAuthoring
         Transform castle = new GameObject("Castle").transform;
         castle.SetParent(world, false);
 
-        SpawnPiece(castle, "medieval_buildings/WallEntrance.fbx", "Entrance", new Vector3(0f, 0f, -9f), 180f, Vector3.one * 2.25f, "b9c2ce");
-        SpawnPiece(castle, "medieval_buildings/Door.fbx", "Door", new Vector3(0f, 0.1f, -8.75f), 180f, Vector3.one * 2.15f, "7d5635");
-        SpawnPiece(castle, "medieval_buildings/Bridge.fbx", "Bridge", new Vector3(0f, 0f, -2.6f), 0f, new Vector3(2f, 1.35f, 2.25f), "9a7a52");
-        SpawnPiece(castle, "medieval_buildings/Well.fbx", "Well", new Vector3(-6f, 0f, -2f), 0f, Vector3.one * 1.55f, "6e7e8f");
+        // Alturas objetivo (metros) tomadas de la referencia visual de Godot.
+        SpawnNormalized(castle, "medieval_buildings/WallEntrance.fbx", "Entrance", new Vector3(0f, 0f, -9f), 180f, 4.5f, "b9c2ce");
+        SpawnNormalized(castle, "medieval_buildings/Door.fbx", "Door", new Vector3(0f, 0.1f, -8.75f), 180f, 2.6f, "7d5635");
+        SpawnNormalized(castle, "medieval_buildings/Bridge.fbx", "Bridge", new Vector3(0f, 0f, -2.6f), 0f, 4.0f, "9a7a52", useMaxDimension: true);
+        SpawnNormalized(castle, "medieval_buildings/Well.fbx", "Well", new Vector3(-6f, 0f, -2f), 0f, 1.6f, "6e7e8f");
 
         foreach (float side in new[] { -1f, 1f })
         {
             string suffix = side < 0 ? "L" : "R";
-            SpawnPiece(castle, "medieval_buildings/LargeSquareTower.fbx", $"LargeTower{suffix}", new Vector3(side * 7f, 0f, -10.5f), 180f, Vector3.one * 2.05f, "c6ccd6");
-            SpawnPiece(castle, "medieval_buildings/PointyTower.fbx", $"PointyTower{suffix}", new Vector3(side * 12f, 0f, -13f), 180f, Vector3.one * 1.9f, "b7bec9");
-            SpawnPiece(castle, "medieval_buildings/WatchTowerWRoof.fbx", $"WatchTower{suffix}", new Vector3(side * 13.5f, 0f, -5f), 180f, Vector3.one * 1.6f, "d7c7ae");
-            SpawnPiece(castle, "medieval_buildings/Banner.fbx", $"Banner{suffix}", new Vector3(side * 3.8f, 2.8f, -8.55f), 180f, Vector3.one * 2f, "caa24a");
+            SpawnNormalized(castle, "medieval_buildings/LargeSquareTower.fbx", $"LargeTower{suffix}", new Vector3(side * 7f, 0f, -10.5f), 180f, 8f, "c6ccd6");
+            SpawnNormalized(castle, "medieval_buildings/PointyTower.fbx", $"PointyTower{suffix}", new Vector3(side * 12f, 0f, -13f), 180f, 11f, "b7bec9");
+            SpawnNormalized(castle, "medieval_buildings/WatchTowerWRoof.fbx", $"WatchTower{suffix}", new Vector3(side * 13.5f, 0f, -5f), 180f, 6.5f, "d7c7ae");
+            SpawnNormalized(castle, "medieval_buildings/Banner.fbx", $"Banner{suffix}", new Vector3(side * 3.8f, 2.8f, -8.55f), 180f, 2.2f, "caa24a");
         }
 
         foreach (float x in new[] { -10.5f, -8.8f, -5f, -3.2f, 3.2f, 5f, 8.8f, 10.5f })
         {
-            SpawnPiece(castle, "medieval_buildings/WallBricks.fbx", $"WallBrick{x}", new Vector3(x, 0f, -10f), 180f, Vector3.one * 1.75f, "b8bfc9");
+            SpawnNormalized(castle, "medieval_buildings/WallBricks.fbx", $"WallBrick{x}", new Vector3(x, 0f, -10f), 180f, 3.6f, "b8bfc9");
+        }
+    }
+
+    private static void SpawnRow(Transform parent, string folder, string fileName, string baseName, Vector3[] positions, float targetHeight, string tint)
+    {
+        for (int i = 0; i < positions.Length; i++)
+        {
+            SpawnNormalized(parent, $"{folder}/{fileName}", $"{baseName}{i + 1}", positions[i], 180f, targetHeight, tint);
         }
     }
 
@@ -195,34 +208,26 @@ public static class MenuSceneAuthoring
         {
             new Vector3(-26f, 0f, -16f), new Vector3(-22.5f, 0f, -14.5f),
             new Vector3(23f, 0f, -15f), new Vector3(26.5f, 0f, -13.5f)
-        }, 1.5f, "36563a");
+        }, 5f, "36563a");
         SpawnRow(nature, natureFolder, "Tree2.fbx", "Tree2", new[]
         {
             new Vector3(-30f, 0f, -12f), new Vector3(-18.5f, 0f, -15.5f),
             new Vector3(18.5f, 0f, -15f), new Vector3(30f, 0f, -12.5f)
-        }, 1.25f, "3f6441");
+        }, 4.2f, "3f6441");
         SpawnRow(nature, natureFolder, "Tree3.fbx", "Tree3", new[]
         {
             new Vector3(-33f, 0f, -8f), new Vector3(-28f, 0f, -18f),
             new Vector3(28f, 0f, -18f), new Vector3(33f, 0f, -8.5f)
-        }, 1.2f, "446b46");
+        }, 4f, "446b46");
         SpawnRow(nature, natureFolder, "Rock1.fbx", "Rock1", new[]
         {
             new Vector3(-16.5f, 0f, -13.5f), new Vector3(16.5f, 0f, -13.5f),
             new Vector3(-20.5f, 0f, -11f), new Vector3(20.5f, 0f, -11f)
-        }, 0.95f, "5d6470");
+        }, 1f, "5d6470");
         SpawnRow(nature, natureFolder, "Rock4.fbx", "Rock4", new[]
         {
             new Vector3(-13.5f, 0f, -15f), new Vector3(13.5f, 0f, -15f)
-        }, 1.05f, "525965");
-    }
-
-    private static void SpawnRow(Transform parent, string folder, string fileName, string baseName, Vector3[] positions, float scale, string tint)
-    {
-        for (int i = 0; i < positions.Length; i++)
-        {
-            SpawnPiece(parent, $"{folder}/{fileName}", $"{baseName}{i + 1}", positions[i], 180f, Vector3.one * scale, tint);
-        }
+        }, 1.1f, "525965");
     }
 
     private static void BuildTorches(Transform world)
@@ -239,7 +244,7 @@ public static class MenuSceneAuthoring
 
     private static void BuildMist(Transform world)
     {
-        Material mistMat = EnsureMaterial("MenuMist", new Color(0.25f, 0.34f, 0.45f, 0.08f), null, Vector2.one, unlit: true);
+        Material mistMat = EnsureMaterial("MenuMist", new Color(0.25f, 0.34f, 0.45f, 0.035f), null, Vector2.one, unlit: true);
         Mesh quad = GetPrimitiveMesh(PrimitiveType.Quad);
         for (int i = 0; i < 7; i++)
         {
@@ -293,30 +298,31 @@ public static class MenuSceneAuthoring
         FullRectImage(canvas.transform, "Overlay", new Color(0f, 0f, 0f, 0.18f));
         FullRectImage(canvas.transform, "Vignette", new Color(0f, 0f, 0f, 0.2f));
 
-        // Bloque de título arriba-izquierda.
+        // Bloque de título arriba-izquierda (pivot 0 para que anchoredPosition sea el borde izquierdo).
         Text title = CreateText(canvas.transform, "TitleText", "WHAT THE HELL?", 34, HexColor("ffb42b"), FontStyle.Bold);
-        Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(56f, -70f), new Vector2(700f, 60f));
+        AnchorLeft(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(56f, -70f), new Vector2(700f, 60f));
         title.alignment = TextAnchor.UpperLeft;
         title.horizontalOverflow = HorizontalWrapMode.Overflow;
         AddShadow(title, new Vector2(4f, 5f));
 
         Text subtitle = CreateText(canvas.transform, "SubtitleText", "UNA AVENTURA ENTRE BOSQUES, MINAS Y CASTILLOS", 17, HexColor("d8e3f1"));
-        Anchor(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(56f, -108f), new Vector2(700f, 32f));
+        AnchorLeft(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(56f, -108f), new Vector2(700f, 32f));
         subtitle.alignment = TextAnchor.UpperLeft;
         subtitle.horizontalOverflow = HorizontalWrapMode.Overflow;
         AddShadow(subtitle, new Vector2(3f, 3f));
 
-        // Panel principal con los 5 botones.
+        // Panel principal con los 5 botones (pivot arriba-izquierda, relativo al borde superior).
         GameObject mainPanel = new GameObject("MainButtonsPanel", typeof(RectTransform));
         RectTransform mainRect = (RectTransform)mainPanel.transform;
         SetParent(mainRect, canvas.transform);
-        Anchor(mainRect, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(76f, -40f), new Vector2(420f, 420f));
+        mainRect.pivot = new Vector2(0f, 1f);
+        Anchor(mainRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(56f, -150f), new Vector2(420f, 280f));
 
-        Button newGame = CreateStyledButton(mainPanel.transform, "NewGameButton", "NUEVO JUEGO", new Vector2(0f, -150f));
-        Button continueGame = CreateStyledButton(mainPanel.transform, "ContinueButton", "CONTINUAR", new Vector2(0f, -212f));
-        Button chapters = CreateStyledButton(mainPanel.transform, "ChaptersButton", "CAPÍTULOS", new Vector2(0f, -274f));
-        Button credits = CreateStyledButton(mainPanel.transform, "CreditsButton", "CRÉDITOS", new Vector2(0f, -336f));
-        Button quit = CreateStyledButton(mainPanel.transform, "QuitButton", "SALIR", new Vector2(0f, -398f));
+        Button newGame = CreateStyledButton(mainPanel.transform, "NewGameButton", "NUEVO JUEGO", new Vector2(0f, -20f), 24, topAnchor: true);
+        Button continueGame = CreateStyledButton(mainPanel.transform, "ContinueButton", "CONTINUAR", new Vector2(0f, -82f), 24, topAnchor: true);
+        Button chapters = CreateStyledButton(mainPanel.transform, "ChaptersButton", "CAPÍTULOS", new Vector2(0f, -144f), 24, topAnchor: true);
+        Button credits = CreateStyledButton(mainPanel.transform, "CreditsButton", "CRÉDITOS", new Vector2(0f, -206f), 24, topAnchor: true);
+        Button quit = CreateStyledButton(mainPanel.transform, "QuitButton", "SALIR", new Vector2(0f, -268f), 24, topAnchor: true);
 
         // Hint inferior.
         Text hint = CreateText(canvas.transform, "HintLabel",
@@ -465,12 +471,19 @@ public static class MenuSceneAuthoring
             color.a);
     }
 
-    private static Button CreateStyledButton(Transform parent, string name, string label, Vector2 anchoredPosition, int fontSize = 24)
+    private static Button CreateStyledButton(Transform parent, string name, string label, Vector2 anchoredPosition, int fontSize = 24, bool topAnchor = false)
     {
         RemoveExistingChild(parent, name);
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button), typeof(UIButtonHover));
         RectTransform rect = (RectTransform)go.transform;
         SetParent(rect, parent);
+        if (topAnchor)
+        {
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+        }
+
         rect.sizeDelta = new Vector2(400f, 54f);
         rect.anchoredPosition = anchoredPosition;
         go.GetComponent<Image>().color = new Color(0.09f, 0.10f, 0.14f, 0.88f);
@@ -550,6 +563,13 @@ public static class MenuSceneAuthoring
         rect.sizeDelta = size;
     }
 
+    /// <summary>Anchor con pivot.x=0 para que anchoredPosition sea el borde izquierdo del rect.</summary>
+    private static void AnchorLeft(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 position, Vector2 size)
+    {
+        rect.pivot = new Vector2(0f, rect.pivot.y);
+        Anchor(rect, anchorMin, anchorMax, position, size);
+    }
+
     private static void SetParent(RectTransform rect, Transform parent)
     {
         rect.SetParent(parent, false);
@@ -564,23 +584,98 @@ public static class MenuSceneAuthoring
         }
     }
 
-    private static void SpawnPiece(Transform parent, string relativePath, string name, Vector3 position, float yaw,
-        Vector3 scale, string tint)
+    /// <summary>
+    /// Instancia un modelo y lo escala para que su altura (o dimensión mayor)
+    /// mida exactamente targetSize en metros, sin importar las unidades del archivo.
+    /// </summary>
+    private static void SpawnNormalized(Transform parent, string relativePath, string name, Vector3 position,
+        float yaw, float targetSize, string tint, bool useMaxDimension = false)
     {
-        Mesh mesh = GetModelMesh($"{SourceRoot}/{relativePath}");
-        if (mesh == null)
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{SourceRoot}/{relativePath}");
+        if (asset == null)
         {
             Debug.LogWarning($"[MenuAuthoring] Modelo no encontrado: {relativePath}");
             return;
         }
 
+        GameObject piece = PrefabUtility.InstantiatePrefab(asset) as GameObject;
+        if (piece == null)
+        {
+            piece = Object.Instantiate(asset);
+        }
+
+        foreach (Collider collider in piece.GetComponentsInChildren<Collider>(true))
+        {
+            Object.DestroyImmediate(collider);
+        }
+
+        // Medir bounds con la escala importada intacta.
+        Bounds bounds = ComputeWorldBounds(piece);
+        float current = useMaxDimension
+            ? Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z))
+            : bounds.size.y;
+        float factor = current > 1e-5f ? targetSize / current : 1f;
+
+        // El prefab conserva sus escalas internas (los FBX en cm traen ×100 en la raíz):
+        // se envuelve en un contenedor y se escala el contenedor, nunca el prefab.
+        piece.name = "Model";
+        GameObject wrapper = new GameObject(name);
+        wrapper.transform.SetParent(parent, false);
+        wrapper.transform.position = position;
+        wrapper.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        wrapper.transform.localScale = Vector3.one * factor;
+        piece.transform.SetParent(wrapper.transform, false);
+
         Material material = EnsureMaterial($"MenuTint_{tint}", HexColor(tint), null, Vector2.one);
-        GameObject piece = new GameObject(name);
-        piece.transform.SetParent(parent, false);
-        piece.transform.position = position;
-        piece.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-        piece.transform.localScale = scale;
-        AttachMesh(piece, mesh, material);
+        foreach (MeshRenderer renderer in piece.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            int count = Mathf.Max(1, renderer.sharedMaterials.Length);
+            Material[] slots = new Material[count];
+            for (int i = 0; i < count; i++)
+            {
+                slots[i] = material;
+            }
+
+            renderer.sharedMaterials = slots;
+        }
+    }
+
+    private static Bounds ComputeWorldBounds(GameObject root)
+    {
+        // Renderer.bounds es poco fiable antes del primer render (puede devolver
+        // valores ×100). Se calcula el AABB exacto desde los meshes locales.
+        bool any = false;
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+        foreach (MeshFilter filter in root.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (filter.sharedMesh == null)
+            {
+                continue;
+            }
+
+            Matrix4x4 localToWorld = filter.transform.localToWorldMatrix;
+            Bounds meshBounds = filter.sharedMesh.bounds;
+            Vector3 center = meshBounds.center;
+            Vector3 extents = meshBounds.extents;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = localToWorld.MultiplyPoint3x4(new Vector3(
+                    center.x + ((i & 1) == 0 ? -extents.x : extents.x),
+                    center.y + ((i & 2) == 0 ? -extents.y : extents.y),
+                    center.z + ((i & 4) == 0 ? -extents.z : extents.z)));
+                if (!any)
+                {
+                    bounds = new Bounds(corner, Vector3.zero);
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(corner);
+                }
+            }
+        }
+
+        return bounds;
     }
 
     private static void AttachMesh(GameObject go, Mesh mesh, Material material)
@@ -692,13 +787,17 @@ public static class MenuSceneAuthoring
 
         string path = $"{MaterialsRoot}/{name}.mat";
         Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+        string desiredShader = unlit ? "Universal Render Pipeline/Unlit" : "Universal Render Pipeline/Lit";
         if (material == null)
         {
-            Shader shader = Shader.Find(unlit
-                ? "Universal Render Pipeline/Unlit"
-                : "Universal Render Pipeline/Lit");
+            Shader shader = Shader.Find(desiredShader);
             material = new Material(shader);
             AssetDatabase.CreateAsset(material, path);
+        }
+        else if (material.shader.name != desiredShader)
+        {
+            Shader shader = Shader.Find(desiredShader);
+            if (shader != null) material.shader = shader;
         }
 
         material.color = color;
@@ -706,6 +805,11 @@ public static class MenuSceneAuthoring
         {
             material.mainTexture = texture;
             material.mainTextureScale = tiling;
+            if (unlit)
+            {
+                // Unlit no usa _BaseColor tint salvo para alpha; dejar blanco para ver textura pura.
+                material.color = Color.white;
+            }
         }
 
         EditorUtility.SetDirty(material);

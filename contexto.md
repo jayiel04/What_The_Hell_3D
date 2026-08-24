@@ -321,3 +321,24 @@ Re-verificado: suite 14/14, build Linux64 249 MB 0 errores.
 - Popups con esquinas rectas y Outline simple (Godot usa StyleBoxFlat radius 18 + sombra).
 - Estrellas ×4 de su radio original para que sean visibles sin post-proceso bloom/filmic.
 - Tamaños de fuente escalados (~×1.6) para la resolución de referencia 1280×720.
+
+## Corrección visual del menú e intro (capturas verificadas) — 2026-08-22
+
+### Proceso nuevo (a petición del usuario)
+- `Tools/Editor/SceneScreenshot.cs`: captura PNG real (1280×720) de cualquier escena en batchmode con GPU; cambia temporalmente los canvas a ScreenSpaceCamera para incluir la UI. `CaptureMenu`/`CaptureIntro`/`CaptureSceneWithArg (-customScene -customOutput)`. Salida: `/tmp/opencode/shots/`. Toda modificación visual se verifica con captura antes de dar por bueno el resultado.
+
+### Causas raíz encontradas (y fixes)
+1. **UI cortada**: `anchoredPosition` posiciona el CENTRO del rect, no su borde. Fix: pivote (0,·) para elementos anclados a la izquierda y panel de botones re-anclado arriba-izquierda con botones en columnas (topAnchor).
+2. **Piezas del castillo invisibles/gigantes**: dos bugs encadenados — (a) `Renderer.bounds` mide mal antes del primer render (devolvía ×100); (b) asignar `localScale` al prefab instanciado pisa la escala interna ×100 que el importador FBX deja en la raíz para archivos en cm. Fix: AABB exacto calculado desde `MeshFilter.sharedMesh.bounds` transformado por `localToWorldMatrix`, y **wrapper pattern**: el prefab se instancia intacto bajo un contenedor; el contenedor recibe posición/rotación/escala normalizada.
+3. **Unidades inconsistentes entre FBX**: WallEntrance mide 0.0155 u nativo, GraveStone 0.14, statue.obj 132 m — no existe factor único. Fix: normalización por altura objetivo en metros por pieza (Entrance 4.5, torres 8/11/6.5, muralla 3.6, Door 2.6, Banner 2.2, pozos 1.6, árboles 4–5, rocas 1, tumbas 1.3, estatua 3).
+4. **Luna negra** → material Unlit con textura NASA (en Godot era emisiva).
+5. **Castillo sin luz**: Godot dirige las luces por −Z del nodo, Unity por +Z → yaw compensado (menú 168°, intro 155°) para iluminar la fachada.
+6. **Luna espejada**: la rotación Y180 de la cámara (necesaria para mirar −Z) invierte el eje X en pantalla → luna/glow movidos a −X para que aparezcan arriba-derecha como el original.
+7. **Piso azulado**: eran los 7 quads de niebla apilados (α0.08 c/u) + piso unlit que no recibía las antorchas. Fix: niebla α0.035 y piso Lit `#111820` (recupera el charco cálido del original).
+
+### Resultado verificado con capturas
+- Menú: composición equivalente a la referencia de Godot — muralla con almenas y estandartes, entrada con arco+puerta+puente, torre cuadrada almenada, torre puntiaguda, vigía con techo, pozo, árboles y rocas con tintes, 4 antorchas con charcos cálidos, luna NASA arriba-derecha, 294 estrellas, UI completa sin cortes.
+- Intro: cementerio con 28 tumbas de tamaño correcto, árboles normalizados, estatua 3 m (ya no tapa la cámara), arranque oscuro correcto según timeline (la luz lunar se revela en S2).
+
+### Verificación
+- Suite PlayMode **16/16**, compilación 0 errores, validación estática 0 fallos (384 refs), build Linux64 258 MB 0 errores.

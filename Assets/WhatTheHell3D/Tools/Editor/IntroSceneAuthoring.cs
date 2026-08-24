@@ -170,7 +170,9 @@ public static class IntroSceneAuthoring
         moon.color = new Color(0.87f, 0.91f, 1f);
         moon.intensity = 0f;
         moon.shadows = LightShadows.Soft;
-        moonGo.transform.rotation = Quaternion.Euler(45f, -25f, 0f);
+        // Compensa la convención de dirección de luz (Godot −Z vs Unity +Z)
+        // para que ilumine la fachada de la puerta/castillo.
+        moonGo.transform.rotation = Quaternion.Euler(45f, 155f, 0f);
 
         // ------------------------------------------------------------ cámara
         GameObject cameraGo = new GameObject("MainCamera", typeof(Camera), typeof(AudioListener));
@@ -302,13 +304,30 @@ public static class IntroSceneAuthoring
 
     private static void BuildStatue(Transform world, Material material)
     {
-        GameObject statue = new GameObject("Statue");
+        // statue.obj mide ~132 m de nativo: se normaliza a 3 m de alto.
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsRoot}/models/statue/statue.obj");
+        if (asset == null)
+        {
+            Debug.LogWarning("[IntroAuthoring] statue.obj no encontrado.");
+            return;
+        }
+
+        GameObject statue = PrefabUtility.InstantiatePrefab(asset) as GameObject
+            ?? Object.Instantiate(asset);
+        statue.name = "Statue";
+        foreach (Collider col in statue.GetComponentsInChildren<Collider>(true))
+        {
+            Object.DestroyImmediate(col);
+        }
+
         statue.transform.SetParent(world, false);
         statue.transform.position = new Vector3(3.2f, 0f, -7f);
-        Mesh mesh = GetModelMesh($"{ModelsRoot}/models/statue/statue.obj");
-        if (mesh != null)
+        Bounds bounds = ComputeWorldBounds(statue);
+        float factor = bounds.size.y > 1e-5f ? 3f / bounds.size.y : 1f;
+        statue.transform.localScale = Vector3.one * factor;
+        foreach (MeshRenderer renderer in statue.GetComponentsInChildren<MeshRenderer>(true))
         {
-            AddMeshRenderer(statue.transform, mesh, material);
+            renderer.sharedMaterial = material;
         }
     }
 
@@ -350,31 +369,33 @@ public static class IntroSceneAuthoring
         Material watchTint = EnsureMaterial("IntroCastleWatch", HexColor("d7c7ae"), null, Vector2.one);
         Material bannerTint = EnsureMaterial("IntroCastleBanner", HexColor("caa24a"), null, Vector2.one);
 
-        SpawnPiece(castle.transform, "WallEntrance.fbx", "Entrance",
-            new Vector3(0f, 0f, -9f), 180f, Vector3.one * 2.25f, new[] { wallTint });
-        SpawnPiece(castle.transform, "Door.fbx", "Door",
-            new Vector3(0f, 0.1f, -8.75f), 180f, Vector3.one * 2.15f, new[] { doorTint });
-        SpawnPiece(castle.transform, "Bridge.fbx", "Bridge",
-            new Vector3(0f, 0f, -2.6f), 0f, new Vector3(2f, 1.35f, 2.25f), new[] { bridgeTint });
-        SpawnPiece(castle.transform, "Well.fbx", "Well",
-            new Vector3(-6f, 0f, -2f), 0f, Vector3.one * 1.55f, new[] { wellTint });
+        // Alturas objetivo (metros) según la referencia visual del menú de Godot.
+        SpawnNormalized(castle.transform, "medieval_buildings/WallEntrance.fbx", "Entrance",
+            new Vector3(0f, 0f, -9f), 180f, 4.5f, new[] { wallTint });
+        SpawnNormalized(castle.transform, "medieval_buildings/Door.fbx", "Door",
+            new Vector3(0f, 0.1f, -8.75f), 180f, 2.6f, new[] { doorTint });
+        SpawnNormalized(castle.transform, "medieval_buildings/Bridge.fbx", "Bridge",
+            new Vector3(0f, 0f, -2.6f), 0f, 4f, new[] { bridgeTint }, useMaxDimension: true);
+        SpawnNormalized(castle.transform, "medieval_buildings/Well.fbx", "Well",
+            new Vector3(-6f, 0f, -2f), 0f, 1.6f, new[] { wellTint });
 
         foreach (float side in new[] { -1f, 1f })
         {
-            SpawnPiece(castle.transform, "LargeSquareTower.fbx", $"LargeTower{(side < 0 ? "L" : "R")}",
-                new Vector3(side * 7f, 0f, -10.5f), 180f, Vector3.one * 2.05f, new[] { largeTowerTint });
-            SpawnPiece(castle.transform, "PointyTower.fbx", $"PointyTower{(side < 0 ? "L" : "R")}",
-                new Vector3(side * 12f, 0f, -13f), 180f, Vector3.one * 1.9f, new[] { pointyTint });
-            SpawnPiece(castle.transform, "WatchTowerWRoof.fbx", $"WatchTower{(side < 0 ? "L" : "R")}",
-                new Vector3(side * 13.5f, 0f, -5f), 180f, Vector3.one * 1.6f, new[] { watchTint });
-            SpawnPiece(castle.transform, "Banner.fbx", $"Banner{(side < 0 ? "L" : "R")}",
-                new Vector3(side * 3.8f, 2.8f, -8.55f), 180f, Vector3.one * 2f, new[] { bannerTint });
+            string suffix = side < 0 ? "L" : "R";
+            SpawnNormalized(castle.transform, "medieval_buildings/LargeSquareTower.fbx", $"LargeTower{suffix}",
+                new Vector3(side * 7f, 0f, -10.5f), 180f, 8f, new[] { largeTowerTint });
+            SpawnNormalized(castle.transform, "medieval_buildings/PointyTower.fbx", $"PointyTower{suffix}",
+                new Vector3(side * 12f, 0f, -13f), 180f, 11f, new[] { pointyTint });
+            SpawnNormalized(castle.transform, "medieval_buildings/WatchTowerWRoof.fbx", $"WatchTower{suffix}",
+                new Vector3(side * 13.5f, 0f, -5f), 180f, 6.5f, new[] { watchTint });
+            SpawnNormalized(castle.transform, "medieval_buildings/Banner.fbx", $"Banner{suffix}",
+                new Vector3(side * 3.8f, 2.8f, -8.55f), 180f, 2.2f, new[] { bannerTint });
         }
 
         foreach (float x in new[] { -10.5f, -8.8f, -5f, -3.2f, 3.2f, 5f, 8.8f, 10.5f })
         {
-            SpawnPiece(castle.transform, "WallBricks.fbx", $"WallBrick{x:0.#}",
-                new Vector3(x, 0f, -10f), 180f, Vector3.one * 1.75f, new[] { wallTint });
+            SpawnNormalized(castle.transform, "medieval_buildings/WallBricks.fbx", $"WallBrick{x:0.#}",
+                new Vector3(x, 0f, -10f), 180f, 3.6f, new[] { wallTint });
         }
 
         GameObject lightGo = new GameObject("CastleLight", typeof(Light));
@@ -393,19 +414,94 @@ public static class IntroSceneAuthoring
         return color;
     }
 
-    private static void SpawnPiece(Transform parent, string fileName, string name, Vector3 localPos, float yaw,
-        Vector3 scale, Material[] materials)
+    /// <summary>Instancia un modelo y lo escala a targetSize (metros) midiendo sus bounds reales.</summary>
+    private static void SpawnNormalized(Transform parent, string relativePath, string name, Vector3 localPos,
+        float yaw, float targetSize, Material[] materials, bool useMaxDimension = false)
     {
-        Mesh mesh = GetModelMesh($"{ModelsRoot}/medieval_buildings/{fileName}");
-        if (mesh == null)
+        string path = $"{ModelsRoot}/{relativePath}";
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (asset == null)
         {
+            Debug.LogWarning($"[IntroAuthoring] Modelo no encontrado: {path}");
             return;
         }
 
-        GameObject piece = AddMeshRenderer(parent, name, mesh, materials);
-        piece.transform.localPosition = localPos;
-        piece.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-        piece.transform.localScale = scale;
+        GameObject piece = PrefabUtility.InstantiatePrefab(asset) as GameObject;
+        if (piece == null)
+        {
+            piece = Object.Instantiate(asset);
+        }
+
+        foreach (Collider col in piece.GetComponentsInChildren<Collider>(true))
+        {
+            Object.DestroyImmediate(col);
+        }
+
+        Bounds bounds = ComputeWorldBounds(piece);
+        float current = useMaxDimension
+            ? Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z))
+            : bounds.size.y;
+        float factor = current > 1e-5f ? targetSize / current : 1f;
+
+        // El prefab conserva sus escalas internas (FBX en cm traen ×100 en la raíz):
+        // se envuelve en un contenedor y se escala el contenedor, nunca el prefab.
+        piece.name = "Model";
+        GameObject wrapper = new GameObject(name);
+        wrapper.transform.SetParent(parent, false);
+        wrapper.transform.localPosition = localPos;
+        wrapper.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+        wrapper.transform.localScale = Vector3.one * factor;
+        piece.transform.SetParent(wrapper.transform, false);
+
+        foreach (MeshRenderer renderer in piece.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            int count = Mathf.Max(1, renderer.sharedMaterials.Length);
+            Material[] slots = new Material[count];
+            for (int i = 0; i < count; i++)
+            {
+                slots[i] = materials[i % materials.Length];
+            }
+
+            renderer.sharedMaterials = slots;
+        }
+    }
+
+    private static Bounds ComputeWorldBounds(GameObject root)
+    {
+        // Renderer.bounds es poco fiable antes del primer render (puede devolver
+        // valores ×100). Se calcula el AABB exacto desde los meshes locales.
+        bool any = false;
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+        foreach (MeshFilter filter in root.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (filter.sharedMesh == null)
+            {
+                continue;
+            }
+
+            Matrix4x4 localToWorld = filter.transform.localToWorldMatrix;
+            Bounds meshBounds = filter.sharedMesh.bounds;
+            Vector3 center = meshBounds.center;
+            Vector3 extents = meshBounds.extents;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = localToWorld.MultiplyPoint3x4(new Vector3(
+                    center.x + ((i & 1) == 0 ? -extents.x : extents.x),
+                    center.y + ((i & 2) == 0 ? -extents.y : extents.y),
+                    center.z + ((i & 4) == 0 ? -extents.z : extents.z)));
+                if (!any)
+                {
+                    bounds = new Bounds(corner, Vector3.zero);
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(corner);
+                }
+            }
+        }
+
+        return bounds;
     }
 
     private static void BuildGraveyard(Transform world, Material material)
@@ -415,13 +511,40 @@ public static class IntroSceneAuthoring
         for (int i = 0; i < GravePositions.Length; i++)
         {
             int variant = (i % 9) + 1;
-            Mesh mesh = GetModelMesh($"{ModelsRoot}/graveyard/GraveStone_{variant}.fbx");
+            string path = $"{ModelsRoot}/graveyard/GraveStone_{variant}.fbx";
+            GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             GameObject grave = new GameObject($"Grave{i + 1}");
             grave.transform.SetParent(graveyard, false);
             grave.transform.position = GravePositions[i];
-            if (mesh != null)
+
+            
+            if (asset == null)
             {
-                AddMeshRenderer(grave.transform, mesh, material);
+                Debug.LogWarning($"[IntroAuthoring] Tumba no encontrada: {path}");
+                continue;
+            }
+
+            GameObject instance = PrefabUtility.InstantiatePrefab(asset) as GameObject;
+            if (instance == null) instance = Object.Instantiate(asset);
+            instance.name = "Model";
+            foreach (Collider col in instance.GetComponentsInChildren<Collider>(true))
+            {
+                Object.DestroyImmediate(col);
+            }
+
+            Bounds graveBounds = ComputeWorldBounds(instance);
+            float graveFactor = graveBounds.size.y > 1e-5f ? 1.3f / graveBounds.size.y : 1f;
+            instance.transform.SetParent(grave.transform, false);
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            grave.transform.localScale = Vector3.one * graveFactor;
+
+            foreach (MeshRenderer renderer in instance.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                int count = Mathf.Max(1, renderer.sharedMaterials.Length);
+                Material[] slots = new Material[count];
+                for (int j = 0; j < count; j++) slots[j] = material;
+                renderer.sharedMaterials = slots;
             }
         }
     }
@@ -438,11 +561,13 @@ public static class IntroSceneAuthoring
             GameObject treeGo = new GameObject($"Tree{i + 1}");
             treeGo.transform.SetParent(forest, false);
             treeGo.transform.position = tree.position;
-            treeGo.transform.localScale = Vector3.one * tree.scale;
             if (mesh != null)
             {
                 // Los OBJ de Godot traen MTL multi-material: submesh 0 = hojas, 1 = tronco.
                 AddMeshRenderer(treeGo.transform, mesh, new[] { leaves, trunk });
+                Bounds treeBounds = ComputeWorldBounds(treeGo);
+                float treeFactor = treeBounds.size.y > 1e-5f ? tree.scale * 3f / treeBounds.size.y : 1f;
+                treeGo.transform.localScale = Vector3.one * treeFactor;
             }
         }
     }
@@ -451,7 +576,7 @@ public static class IntroSceneAuthoring
     {
         Transform wallRoot = new GameObject("CastleWall").transform;
         wallRoot.SetParent(world, false);
-        Mesh moduleMesh = GetModelMesh($"{ModelsRoot}/medieval_buildings/WallBricks.fbx");
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsRoot}/medieval_buildings/WallBricks.fbx");
         for (int i = 0; i < WallPlacements.Length; i++)
         {
             IntroWall wall = WallPlacements[i];
@@ -459,10 +584,25 @@ public static class IntroSceneAuthoring
             module.transform.SetParent(wallRoot, false);
             module.transform.position = wall.position;
             module.transform.rotation = Quaternion.Euler(0f, wall.yaw, 0f);
-            module.transform.localScale = Vector3.one * 1.2f;
-            if (moduleMesh != null)
+            if (asset != null)
             {
-                AddMeshRenderer(module.transform, moduleMesh, wallStone);
+                GameObject instance = PrefabUtility.InstantiatePrefab(asset) as GameObject;
+                if (instance == null) instance = Object.Instantiate(asset);
+                instance.name = "Model";
+                foreach (Collider col in instance.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(col);
+                Bounds wallBounds = ComputeWorldBounds(instance);
+                float wallFactor = wallBounds.size.y > 1e-5f ? 3.6f / wallBounds.size.y : 1f;
+                instance.transform.SetParent(module.transform, false);
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                module.transform.localScale = Vector3.one * wallFactor;
+                foreach (MeshRenderer renderer in instance.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    int count = Mathf.Max(1, renderer.sharedMaterials.Length);
+                    Material[] slots = new Material[count];
+                    for (int j = 0; j < count; j++) slots[j] = wallStone;
+                    renderer.sharedMaterials = slots;
+                }
             }
             else
             {
