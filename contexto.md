@@ -342,3 +342,6 @@ Re-verificado: suite 14/14, build Linux64 249 MB 0 errores.
 
 ### Verificación
 - Suite PlayMode **16/16**, compilación 0 errores, validación estática 0 fallos (384 refs), build Linux64 258 MB 0 errores.
+
+### Estatua de la intro corregida (captura closeup verificada)
+statue.obj mide 189×132×516 m y está acostado (Z-up). Fix en `BuildStatue`: rotación Euler(−90,0,0) para ponerla de pie antes de medir, normalización a 2.2 m de alto, y apoyo de la base en el suelo (min.y de los bounds tras escalar → position.y). Verificado con captura de cerca: figura humana de pie, 2.2 m, frente al castillo. Suite 16/16, build 258 MB 0 errores.

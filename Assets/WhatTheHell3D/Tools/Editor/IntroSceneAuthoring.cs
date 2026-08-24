@@ -304,7 +304,8 @@ public static class IntroSceneAuthoring
 
     private static void BuildStatue(Transform world, Material material)
     {
-        // statue.obj mide ~132 m de nativo: se normaliza a 3 m de alto.
+        // statue.obj mide ~132×190×516 m y está acostado (eje Z-up del export):
+        // se rota a vertical, se normaliza a 2.2 m de alto y se coloca en su pedestal.
         GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsRoot}/models/statue/statue.obj");
         if (asset == null)
         {
@@ -320,11 +321,17 @@ public static class IntroSceneAuthoring
             Object.DestroyImmediate(col);
         }
 
-        statue.transform.SetParent(world, false);
-        statue.transform.position = new Vector3(3.2f, 0f, -7f);
+        // Z-up → Y-up antes de medir.
+        statue.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
         Bounds bounds = ComputeWorldBounds(statue);
-        float factor = bounds.size.y > 1e-5f ? 3f / bounds.size.y : 1f;
+        float factor = bounds.size.y > 1e-5f ? 2.2f / bounds.size.y : 1f;
         statue.transform.localScale = Vector3.one * factor;
+
+        // Apoyar la base en el suelo (el origen del mesh no está en los pies).
+        Bounds scaledBounds = ComputeWorldBounds(statue);
+        statue.transform.SetParent(world, false);
+        statue.transform.position = new Vector3(3.2f, -scaledBounds.min.y, -7f);
+        Debug.Log($"[IntroAuthoring] Estatua: min.y tras escala={scaledBounds.min.y:0.000} → position.y={statue.transform.position.y:0.000} alto={scaledBounds.size.y:0.000}");
         foreach (MeshRenderer renderer in statue.GetComponentsInChildren<MeshRenderer>(true))
         {
             renderer.sharedMaterial = material;
