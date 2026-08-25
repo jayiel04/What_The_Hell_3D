@@ -430,36 +430,40 @@ public static class MenuSceneAuthoring
 
     private static GameObject CreatePopupPanel(Transform parent, string name, string heading, Vector2 size)
     {
-        GameObject panel = new GameObject(name, typeof(RectTransform), typeof(Image));
+        GameObject panel = UIStyleKit.CreateBorderedPanel(parent, name, UIStyleKit.PopupBg, UIStyleKit.PopupBorder, 4f);
         RectTransform rect = (RectTransform)panel.transform;
-        SetParent(rect, parent);
         rect.anchorMin = new Vector2(0.62f, 0.5f);
         rect.anchorMax = new Vector2(0.62f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
         rect.sizeDelta = size;
-        panel.GetComponent<Image>().color = new Color(0.035f, 0.028f, 0.055f, 0.96f);
 
-        Outline outline = panel.AddComponent<Outline>();
-        outline.effectColor = HexColor("d99022");
-        outline.effectDistance = new Vector2(4f, -4f);
-
-        Text title = CreateText(panel.transform, "PopupTitle", heading, 24, HexColor("ffc35c"), FontStyle.Bold);
+        Text title = UIStyleKit.CreateStyledText(panel.transform, "PopupTitle", heading, 24, UIStyleKit.Gold,
+            FontStyle.Bold, TextAnchor.MiddleCenter);
         Anchor(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -44f), new Vector2(size.x - 40f, 40f));
-        title.alignment = TextAnchor.MiddleCenter;
 
         return panel;
     }
 
     private static Button CreateChapterButton(GameObject panel, string name, string label, Vector2 position, Color accent)
     {
-        Button button = CreateStyledButton(panel.transform, name, label, position, 20);
-        Text text = button.GetComponentInChildren<Text>();
-        text.color = Lighten(accent, 0.3f);
+        Button button = UIStyleKit.CreateStyledButton(panel.transform, name, label, position,
+            new Vector2(440f, 58f), 20,
+            new Color(0.07f, 0.08f, 0.11f, 0.95f), accent * 0.65f, Lighten(accent, 0.3f));
         UIButtonHover hover = button.GetComponent<UIButtonHover>();
-        hover.normalText = Lighten(accent, 0.3f);
+        hover.hoverBackground = accent * 0.5f;
+        hover.hoverBorder = accent;
         hover.hoverText = Lighten(accent, 0.55f);
         return button;
+    }
+
+    private static Button CreateStyledButton(Transform parent, string name, string label, Vector2 anchoredPosition,
+        int fontSize = 24, bool topAnchor = false)
+    {
+        return UIStyleKit.CreateStyledButton(parent, name, label, anchoredPosition,
+            new Vector2(400f, 54f), fontSize,
+            UIStyleKit.BtnNormalBg, UIStyleKit.BtnNormalBorder, UIStyleKit.BtnText,
+            alignLeft: true, topAnchor: topAnchor);
     }
 
     private static Color Lighten(Color color, float amount)
@@ -469,48 +473,6 @@ public static class MenuSceneAuthoring
             Mathf.Clamp01(color.g + amount),
             Mathf.Clamp01(color.b + amount),
             color.a);
-    }
-
-    private static Button CreateStyledButton(Transform parent, string name, string label, Vector2 anchoredPosition, int fontSize = 24, bool topAnchor = false)
-    {
-        RemoveExistingChild(parent, name);
-        GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button), typeof(UIButtonHover));
-        RectTransform rect = (RectTransform)go.transform;
-        SetParent(rect, parent);
-        if (topAnchor)
-        {
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-        }
-
-        rect.sizeDelta = new Vector2(400f, 54f);
-        rect.anchoredPosition = anchoredPosition;
-        go.GetComponent<Image>().color = new Color(0.09f, 0.10f, 0.14f, 0.88f);
-
-        GameObject labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
-        SetParent((RectTransform)labelGo.transform, rect);
-        RectTransform labelRect = (RectTransform)labelGo.transform;
-        labelRect.anchorMin = Vector2.zero;
-        labelRect.anchorMax = Vector2.one;
-        labelRect.offsetMin = Vector2.zero;
-        labelRect.offsetMax = Vector2.zero;
-        Text labelText = labelGo.GetComponent<Text>();
-        labelText.font = DefaultFont;
-        labelText.text = label;
-        labelText.fontSize = fontSize;
-        labelText.color = new Color(0.93f, 0.95f, 1f);
-        labelText.alignment = TextAnchor.MiddleCenter;
-        labelText.raycastTarget = false;
-
-        Button button = go.GetComponent<Button>();
-        ColorBlock colors = button.colors;
-        colors.fadeDuration = 0.08f;
-        colors.highlightedColor = new Color(1.06f, 1.03f, 1f);
-        colors.pressedColor = new Color(0.72f, 0.72f, 0.72f);
-        colors.selectedColor = colors.normalColor;
-        button.colors = colors;
-        return go.GetComponent<Button>();
     }
 
     private static int creditLineIndex;
@@ -536,6 +498,7 @@ public static class MenuSceneAuthoring
         text.fontStyle = style;
         text.color = color;
         text.raycastTarget = false;
+        UIStyleKit.AddShadow(text, new Vector2(2f, -2f));
         return text;
     }
 

@@ -215,9 +215,13 @@ public static class IntroSceneAuthoring
             Object.DestroyImmediate(staleBackground.gameObject);
         }
 
-        Text subtitle = CampaignAuthoringTools.CreateTextPublic(canvas.transform, "SubtitleText", "", 30, Color.white);
+        Text subtitle = UIStyleKit.CreateStyledText(canvas.transform, "SubtitleText", "", 30, Color.white,
+            FontStyle.Bold, TextAnchor.MiddleCenter);
+        Outline subtitleOutline = subtitle.gameObject.AddComponent<Outline>();
+        subtitleOutline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+        subtitleOutline.effectDistance = new Vector2(2f, -2f);
         CampaignAuthoringTools.AnchorPublic(subtitle.rectTransform,
-            new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(900f, 120f));
+            new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(1100f, 120f));
         subtitle.alignment = TextAnchor.MiddleCenter;
 
         Image fade = CampaignAuthoringTools.CreateImagePublic(canvas.transform, "FadeImage", new Color(0f, 0f, 0f, 1f));
@@ -229,11 +233,13 @@ public static class IntroSceneAuthoring
         fade.raycastTarget = false;
         fade.transform.SetAsLastSibling();
 
-        Button skip = CampaignAuthoringTools.CreateButtonPublic(canvas.transform, "SkipButton", "Enter para omitir", Vector2.zero);
+        Button skip = UIStyleKit.CreateStyledButton(canvas.transform, "SkipButton", "Enter para omitir", Vector2.zero,
+            new Vector2(240f, 48f), 18, UIStyleKit.BtnNormalBg, UIStyleKit.BtnNormalBorder, UIStyleKit.BtnText);
         RectTransform skipRect = (RectTransform)skip.transform;
         skipRect.anchorMin = new Vector2(1f, 0f);
         skipRect.anchorMax = new Vector2(1f, 0f);
-        skipRect.anchoredPosition = new Vector2(-170f, 44f);
+        skipRect.pivot = new Vector2(1f, 0f);
+        skipRect.anchoredPosition = new Vector2(-24f, 24f);
         skip.transform.SetAsLastSibling();
 
         // --------------------------------------------------------- director

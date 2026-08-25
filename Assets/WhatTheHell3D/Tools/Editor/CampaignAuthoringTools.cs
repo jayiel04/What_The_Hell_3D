@@ -67,18 +67,25 @@ public static class CampaignAuthoringTools
             return;
         }
 
-        Canvas canvas = EnsureCanvas("UICanvas", new Color(0.05f, 0.1f, 0.06f, 0.96f));
-        Text title = CreateText(canvas.transform, "TitleText", "¡VICTORIA!", 64, new Color(1f, 0.85f, 0.25f), FontStyle.Bold);
-        Anchor(title.rectTransform, new Vector2(0.5f, 0.75f), new Vector2(0.5f, 0.75f), Vector2.zero, new Vector2(900f, 90f));
-        title.alignment = TextAnchor.MiddleCenter;
+        Canvas canvas = EnsureCanvas("UICanvas", null);
 
-        Text body = CreateText(canvas.transform, "BodyText", "La campaña de What the Hell? 3D ha terminado.", 24, Color.white);
-        Anchor(body.rectTransform, new Vector2(0.5f, 0.57f), new Vector2(0.5f, 0.57f), Vector2.zero, new Vector2(900f, 50f));
-        body.alignment = TextAnchor.MiddleCenter;
+        GameObject panel = UIStyleKit.CreateBorderedPanel(canvas.transform, "VictoryPanel",
+            UIStyleKit.PopupBg, UIStyleKit.PopupBorder, 4f);
+        RectTransform panelRect = (RectTransform)panel.transform;
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.sizeDelta = new Vector2(860f, 480f);
 
-        Button menu = CreateButton(canvas.transform, "MenuButton", "Volver al menú", new Vector2(0f, -180f));
-        ((RectTransform)menu.transform).anchorMin = new Vector2(0.5f, 0.5f);
-        ((RectTransform)menu.transform).anchorMax = new Vector2(0.5f, 0.5f);
+        Text title = UIStyleKit.CreateStyledText(panel.transform, "TitleText", "¡VICTORIA!", 64, new Color(1f, 0.85f, 0.25f),
+            FontStyle.Bold, TextAnchor.MiddleCenter);
+        Anchor(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(800f, 90f));
+
+        Text body = UIStyleKit.CreateStyledText(panel.transform, "BodyText", "La campaña de What the Hell? 3D ha terminado.", 24,
+            Color.white, FontStyle.Normal, TextAnchor.MiddleCenter);
+        Anchor(body.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(800f, 50f));
+
+        Button menu = UIStyleKit.CreateStyledButton(panel.transform, "MenuButton", "Volver al menú", new Vector2(0f, -160f),
+            new Vector2(380f, 56f), 24, UIStyleKit.BtnNormalBg, UIStyleKit.BtnNormalBorder, UIStyleKit.BtnText);
 
         controller.titleText = title;
         controller.bodyText = body;
@@ -132,45 +139,76 @@ public static class CampaignAuthoringTools
     public static void AuthorHud(CampaignHudController hud)
     {
         Canvas canvas = EnsureCanvas("HUDCanvas", null);
-        Text objectiveTitle = CreateText(canvas.transform, "ObjectiveTitle", "", 26, new Color(1f, 0.82f, 0.3f), FontStyle.Bold);
-        Anchor(objectiveTitle.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -46f), new Vector2(500f, 34f));
-        objectiveTitle.alignment = TextAnchor.UpperLeft;
 
-        Text objective = CreateText(canvas.transform, "ObjectiveText", "", 17, Color.white);
-        Anchor(objective.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -84f), new Vector2(620f, 30f));
-        objective.alignment = TextAnchor.UpperLeft;
+        // Limpiar restos de layouts anteriores a nivel de canvas.
+        foreach (string staleName in new[] { "ObjectiveTitle", "ObjectiveText", "HealthLabel",
+            "HealthBarBackground", "CoinsLabel", "KeyLabel", "CheckpointLabel", "HintLabel", "HudPanel", "StatsPanel" })
+        {
+            Transform stale = canvas.transform.Find(staleName);
+            if (stale != null)
+            {
+                DestroyPersistent(stale.gameObject);
+            }
+        }
 
-        Text healthLabel = CreateText(canvas.transform, "HealthLabel", "SALUD", 16, Color.white);
-        Anchor(healthLabel.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -124f), new Vector2(220f, 24f));
-        healthLabel.alignment = TextAnchor.UpperLeft;
+        // Panel superior-izquierdo redondeado (título, objetivo, salud).
+        GameObject hudPanel = UIStyleKit.CreateBorderedPanel(canvas.transform, "HudPanel",
+            new Color(0.03f, 0.04f, 0.07f, 0.72f), new Color(0.35f, 0.38f, 0.47f, 0.9f), 2f);
+        RectTransform hudPanelRect = (RectTransform)hudPanel.transform;
+        hudPanelRect.pivot = new Vector2(0f, 1f);
+        Anchor(hudPanelRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -16f), new Vector2(400f, 168f));
 
-        Image barBackground = CreateImage(canvas.transform, "HealthBarBackground", new Color(0.65f, 0.08f, 0.08f));
-        Anchor(barBackground.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -152f), new Vector2(220f, 14f));
+        Text objectiveTitle = UIStyleKit.CreateStyledText(hudPanel.transform, "ObjectiveTitle", "", 26, new Color(1f, 0.82f, 0.3f), FontStyle.Bold);
+        objectiveTitle.rectTransform.pivot = new Vector2(0f, 1f);
+        Anchor(objectiveTitle.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -14f), new Vector2(360f, 34f));
+
+        Text objective = UIStyleKit.CreateStyledText(hudPanel.transform, "ObjectiveText", "", 17, Color.white);
+        objective.rectTransform.pivot = new Vector2(0f, 1f);
+        Anchor(objective.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -52f), new Vector2(360f, 30f));
+
+        Text healthLabel = UIStyleKit.CreateStyledText(hudPanel.transform, "HealthLabel", "SALUD", 16, Color.white);
+        healthLabel.rectTransform.pivot = new Vector2(0f, 1f);
+        Anchor(healthLabel.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -92f), new Vector2(220f, 24f));
+
+        Image barBackground = CreateImage(hudPanel.transform, "HealthBarBackground", new Color(0.45f, 0.06f, 0.06f));
+        barBackground.sprite = UIStyleKit.RoundedSprite();
+        barBackground.type = Image.Type.Sliced;
+        barBackground.rectTransform.pivot = new Vector2(0f, 1f);
+        Anchor(barBackground.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -122f), new Vector2(360f, 18f));
         Image fill = CreateImage(barBackground.transform, "HealthBarFill", new Color(0.15f, 0.8f, 0.25f));
+        fill.sprite = UIStyleKit.RoundedSprite();
+        fill.type = Image.Type.Sliced;
         RectTransform fillRect = (RectTransform)fill.transform;
         fillRect.anchorMin = Vector2.zero;
         fillRect.anchorMax = Vector2.one;
-        fillRect.offsetMin = Vector2.zero;
-        fillRect.offsetMax = Vector2.zero;
+        fillRect.offsetMin = new Vector2(3f, 3f);
+        fillRect.offsetMax = new Vector2(-3f, -3f);
         fill.type = Image.Type.Filled;
         fill.fillMethod = Image.FillMethod.Horizontal;
         fill.fillOrigin = 0;
 
-        Text coins = CreateText(canvas.transform, "CoinsLabel", "", 16, Color.white);
-        Anchor(coins.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-294f, -24f), new Vector2(270f, 28f));
-        coins.alignment = TextAnchor.UpperRight;
+        // Panel superior-derecho (monedas, llave, checkpoint).
+        GameObject statsPanel = UIStyleKit.CreateBorderedPanel(canvas.transform, "StatsPanel",
+            new Color(0.03f, 0.04f, 0.07f, 0.72f), new Color(0.35f, 0.38f, 0.47f, 0.9f), 2f);
+        RectTransform statsRect = (RectTransform)statsPanel.transform;
+        statsRect.pivot = new Vector2(1f, 1f);
+        Anchor(statsRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-16f, -16f), new Vector2(300f, 120f));
 
-        Text key = CreateText(canvas.transform, "KeyLabel", "", 16, Color.white);
-        Anchor(key.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-294f, -56f), new Vector2(270f, 28f));
-        key.alignment = TextAnchor.UpperRight;
+        Text coins = UIStyleKit.CreateStyledText(statsPanel.transform, "CoinsLabel", "", 17, Color.white,
+            FontStyle.Normal, TextAnchor.UpperRight);
+        Anchor(coins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(270f, 28f));
 
-        Text checkpoint = CreateText(canvas.transform, "CheckpointLabel", "", 16, Color.white);
-        Anchor(checkpoint.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-294f, -88f), new Vector2(270f, 28f));
-        checkpoint.alignment = TextAnchor.UpperRight;
+        Text key = UIStyleKit.CreateStyledText(statsPanel.transform, "KeyLabel", "", 17, Color.white,
+            FontStyle.Normal, TextAnchor.UpperRight);
+        Anchor(key.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -44f), new Vector2(270f, 28f));
 
-        Text hint = CreateText(canvas.transform, "HintLabel", "", 14, Color.white);
+        Text checkpoint = UIStyleKit.CreateStyledText(statsPanel.transform, "CheckpointLabel", "", 17, Color.white,
+            FontStyle.Normal, TextAnchor.UpperRight);
+        Anchor(checkpoint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -76f), new Vector2(270f, 28f));
+
+        Text hint = UIStyleKit.CreateStyledText(canvas.transform, "HintLabel", "", 14, Color.white,
+            FontStyle.Normal, TextAnchor.LowerRight);
         Anchor(hint.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-294f, 26f), new Vector2(270f, 24f));
-        hint.alignment = TextAnchor.LowerRight;
 
         hud.objectiveTitle = objectiveTitle;
         hud.objectiveText = objective;
@@ -192,28 +230,24 @@ public static class CampaignAuthoringTools
             DestroyPersistent(existing.gameObject);
         }
 
-        GameObject panel = new GameObject("PausePanel", typeof(RectTransform), typeof(Image));
+        GameObject panel = UIStyleKit.CreateBorderedPanel(canvas.transform, "PausePanel",
+            UIStyleKit.PopupBg, UIStyleKit.PopupBorder, 4f);
         RectTransform rect = (RectTransform)panel.transform;
-        SetParent(rect, canvas.transform);
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-        panel.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.78f);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(520f, 600f);
 
-        Text title = CreateText(panel.transform, "PauseTitle", "PAUSA", 36, Color.white, FontStyle.Bold);
-        Anchor(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -160f), new Vector2(400f, 60f));
-        title.alignment = TextAnchor.MiddleCenter;
+        Text title = UIStyleKit.CreateStyledText(panel.transform, "PauseTitle", "PAUSA", 40, UIStyleKit.Gold,
+            FontStyle.Bold, TextAnchor.MiddleCenter);
+        Anchor(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -80f), new Vector2(400f, 60f));
 
-        Button resume = CreateButton(panel.transform, "ResumeButton", "Continuar", new Vector2(0f, -60f));
-        ((RectTransform)resume.transform).anchorMin = new Vector2(0.5f, 0.5f);
-        ((RectTransform)resume.transform).anchorMax = new Vector2(0.5f, 0.5f);
-        Button restart = CreateButton(panel.transform, "RestartButton", "Reiniciar checkpoint", new Vector2(0f, -118f));
-        ((RectTransform)restart.transform).anchorMin = new Vector2(0.5f, 0.5f);
-        ((RectTransform)restart.transform).anchorMax = new Vector2(0.5f, 0.5f);
-        Button menu = CreateButton(panel.transform, "MenuButton", "Volver al menú", new Vector2(0f, -176f));
-        ((RectTransform)menu.transform).anchorMin = new Vector2(0.5f, 0.5f);
-        ((RectTransform)menu.transform).anchorMax = new Vector2(0.5f, 0.5f);
+        Button resume = UIStyleKit.CreateStyledButton(panel.transform, "ResumeButton", "Continuar", new Vector2(0f, -100f),
+            new Vector2(380f, 56f), 24, UIStyleKit.BtnNormalBg, UIStyleKit.BtnNormalBorder, UIStyleKit.BtnText);
+        Button restart = UIStyleKit.CreateStyledButton(panel.transform, "RestartButton", "Reiniciar checkpoint", new Vector2(0f, -175f),
+            new Vector2(380f, 56f), 24, UIStyleKit.BtnNormalBg, UIStyleKit.BtnNormalBorder, UIStyleKit.BtnText);
+        Button menu = UIStyleKit.CreateStyledButton(panel.transform, "MenuButton", "Volver al menú", new Vector2(0f, -250f),
+            new Vector2(380f, 56f), 24, UIStyleKit.BtnNormalBg, UIStyleKit.BtnNormalBorder, UIStyleKit.BtnText);
 
         pause.pausePanel = panel;
         pause.resumeButton = resume;
@@ -351,6 +385,35 @@ public static class CampaignAuthoringTools
     public static void AuthorCampaignLevelsFromMenu()
     {
         AuthorCampaignLevels();
+    }
+
+    /// <summary>Re-autora SOLO la interfaz (menú, intro, HUD, pausa, victoria) sin tocar NavMesh ni audio.</summary>
+    public static void AuthorUiOnly()
+    {
+        EnsureFolders();
+        MenuSceneAuthoring.AuthorMenuScene3D();
+        IntroSceneAuthoring.AuthorIntroScene3D();
+        AuthorVictoryScene();
+        foreach (string level in new[] { "CampaignLevel01", "CampaignLevel02", "CampaignLevel03" })
+        {
+            OpenScene(level);
+            CampaignHudController hud = FindSingle<CampaignHudController>();
+            PauseController pause = FindSingle<PauseController>();
+            if (hud != null)
+            {
+                AuthorHud(hud);
+            }
+
+            if (pause != null)
+            {
+                AuthorPausePanel(pause);
+            }
+
+            SaveOpenScene(level);
+        }
+
+        AssetDatabase.SaveAssets();
+        Debug.Log("[Authoring] Solo-UI completado.");
     }
 
     /// <summary>Punto de entrada batch para re-autor únicamente los tres niveles.</summary>

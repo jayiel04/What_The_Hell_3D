@@ -41,6 +41,12 @@ public static class SceneScreenshot
     private static void Capture(string sceneName, string outputName)
     {
         EditorSceneManager.OpenScene($"{SceneScreenshotPaths.ScenesRoot}/{sceneName}.unity", OpenSceneMode.Single);
+        CaptureCurrent(outputName);
+    }
+
+    public static void CaptureCurrent(string outputName)
+    {
+
 
         Camera camera = Object.FindFirstObjectByType<Camera>();
         if (camera == null)
@@ -63,8 +69,18 @@ public static class SceneScreenshot
             previous[i] = canvases[i].renderMode;
             canvases[i].renderMode = RenderMode.ScreenSpaceCamera;
             canvases[i].worldCamera = camera;
-            canvases[i].planeDistance = 10f;
+            canvases[i].planeDistance = 0.5f;
+            Debug.Log($"[Screenshot] canvas '{canvases[i].name}' enabled={canvases[i].enabled} goActive={canvases[i].gameObject.activeInHierarchy} renderers={canvases[i].GetComponentsInChildren<UnityEngine.UI.Graphic>(true).Length}");
         }
+
+        // Bombear el player loop tras activar/cambiar canvases para que la UI
+        // nunca renderizada construya su geometría antes del render.
+        for (int i = 0; i < 8; i++)
+        {
+            UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+        }
+
+        Canvas.ForceUpdateCanvases();
 
         int width = 1280;
         int height = 720;
@@ -112,4 +128,28 @@ public static class SceneScreenshot
 internal static class SceneScreenshotPaths
 {
     public const string ScenesRoot = "Assets/WhatTheHell3D/Scenes";
+}
+
+public static class PauseShot
+{
+    public static void Capture()
+    {
+        EditorSceneManager.OpenScene($"{SceneScreenshotPaths.ScenesRoot}/CampaignLevel01.unity", OpenSceneMode.Single);
+        var pause = Object.FindFirstObjectByType<PauseController>(FindObjectsInactive.Include);
+        if (pause != null && pause.pausePanel != null)
+        {
+            pause.pausePanel.SetActive(true);
+        }
+
+        SceneScreenshot.CaptureCurrent("pause");
+    }
+}
+
+public static class VictoryShot
+{
+    public static void Capture()
+    {
+        EditorSceneManager.OpenScene($"{SceneScreenshotPaths.ScenesRoot}/Victory.unity", OpenSceneMode.Single);
+        SceneScreenshot.CaptureCurrent("victory");
+    }
 }
