@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public static class UIStyleKit
 {
     private const string UiRoot = "Assets/WhatTheHell3D/UI";
-    private static Font DefaultFont => Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+    private static Font DefaultFont => AssetDatabase.LoadAssetAtPath<Font>("Assets/WhatTheHell3D/UI/Source/MedievalSharp-Regular.ttf");
 
     // Paleta del menú original de Godot (main_menu.gd).
     public static readonly Color BtnNormalBg = new Color(0.09f, 0.10f, 0.14f, 0.88f);

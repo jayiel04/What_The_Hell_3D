@@ -13,7 +13,7 @@ using UnityEngine.UI;
 /// </summary>
 public static class CampaignLevelSceneBuilder
 {
-    private const string ScenesRoot = "Assets/WhatTheHell3D/Scenes";
+    private const string ScenesRoot = "Assets/Scenes";
     private const string MaterialsRoot = "Assets/WhatTheHell3D/Materials";
     private const string DataRoot = "Assets/WhatTheHell3D/Data";
 
@@ -141,6 +141,13 @@ public static class CampaignLevelSceneBuilder
 
         HealthComponent health = playerObject.AddComponent<HealthComponent>();
         health.maxHealth = 100;
+
+        // Rigidbody cinemático requerido para que los triggers (OnTriggerEnter de
+        // pickups, metas y checkpoints) se disparen con el CharacterController.
+        Rigidbody body = playerObject.AddComponent<Rigidbody>();
+        body.isKinematic = true;
+        body.useGravity = false;
+
         return playerObject.AddComponent<PlayerController>();
     }
 

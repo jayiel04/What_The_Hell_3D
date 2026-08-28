@@ -127,7 +127,7 @@ public static class SceneScreenshot
 
 internal static class SceneScreenshotPaths
 {
-    public const string ScenesRoot = "Assets/WhatTheHell3D/Scenes";
+    public const string ScenesRoot = "Assets/Scenes";
 }
 
 public static class PauseShot

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class BuildScript
 {
-    private const string ScenesRoot = "Assets/WhatTheHell3D/Scenes";
+    private const string ScenesRoot = "Assets/Scenes";
     private static readonly string[] Flow =
     {
         "MainMenu",

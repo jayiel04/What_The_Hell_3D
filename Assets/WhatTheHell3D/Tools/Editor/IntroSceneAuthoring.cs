@@ -12,7 +12,7 @@ using UnityEngine.UI;
 /// </summary>
 public static class IntroSceneAuthoring
 {
-    private const string ScenesRoot = "Assets/WhatTheHell3D/Scenes";
+    private const string ScenesRoot = "Assets/Scenes";
     private const string ModelsRoot = "Assets/WhatTheHell3D/Art/Source";
     private const string MaterialsRoot = "Assets/WhatTheHell3D/Materials/Intro";
 

@@ -3,15 +3,15 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "CampaignSceneCatalog", menuName = "WhatTheHell3D/Campaign Scene Catalog")]
 public sealed class CampaignSceneCatalog : ScriptableObject
 {
-    public string mainMenuScene = "Assets/WhatTheHell3D/Scenes/MainMenu.unity";
-    public string introScene = "Assets/WhatTheHell3D/Scenes/Intro.unity";
+    public string mainMenuScene = "Assets/Scenes/MainMenu.unity";
+    public string introScene = "Assets/Scenes/Intro.unity";
     public string[] campaignLevelScenes =
     {
-        "Assets/WhatTheHell3D/Scenes/CampaignLevel01.unity",
-        "Assets/WhatTheHell3D/Scenes/CampaignLevel02.unity",
-        "Assets/WhatTheHell3D/Scenes/CampaignLevel03.unity"
+        "Assets/Scenes/CampaignLevel01.unity",
+        "Assets/Scenes/CampaignLevel02.unity",
+        "Assets/Scenes/CampaignLevel03.unity"
     };
-    public string victoryScene = "Assets/WhatTheHell3D/Scenes/Victory.unity";
+    public string victoryScene = "Assets/Scenes/Victory.unity";
 
     public string GetCampaignLevelScene(int levelId)
     {

@@ -46,7 +46,7 @@ public sealed class IntroCutsceneDirector : MonoBehaviour
 
     [Header("Modelo")]
     public string characterModelPath = "Characters/Knight_Male.gltf";
-    public string nextScenePath = "Assets/WhatTheHell3D/Scenes/CampaignLevel01.unity";
+    public string nextScenePath = "Assets/Scenes/CampaignLevel01.unity";
 
     // Constantes exactas de intro_story_3d.gd
     private const float PlayerCutsceneScale = 0.5f;

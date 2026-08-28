@@ -19,9 +19,9 @@ using UnityEngine.UI;
 /// </summary>
 public static class CampaignAuthoringTools
 {
-    private const string ScenesRoot = "Assets/WhatTheHell3D/Scenes";
+    private const string ScenesRoot = "Assets/Scenes";
     private const string PrefabsRoot = "Assets/WhatTheHell3D/Prefabs";
-    private static Font DefaultFont => Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+    private static Font DefaultFont => AssetDatabase.LoadAssetAtPath<Font>("Assets/WhatTheHell3D/UI/Source/MedievalSharp-Regular.ttf");
 
     [MenuItem("WhatTheHell3D/Autoría/Configurar UI, audio y NavMesh de todas las escenas")]
     public static void AuthorAllFromMenu()
@@ -156,7 +156,7 @@ public static class CampaignAuthoringTools
             new Color(0.03f, 0.04f, 0.07f, 0.72f), new Color(0.35f, 0.38f, 0.47f, 0.9f), 2f);
         RectTransform hudPanelRect = (RectTransform)hudPanel.transform;
         hudPanelRect.pivot = new Vector2(0f, 1f);
-        Anchor(hudPanelRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -16f), new Vector2(400f, 168f));
+        Anchor(hudPanelRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -16f), new Vector2(400f, 340f));
 
         Text objectiveTitle = UIStyleKit.CreateStyledText(hudPanel.transform, "ObjectiveTitle", "", 26, new Color(1f, 0.82f, 0.3f), FontStyle.Bold);
         objectiveTitle.rectTransform.pivot = new Vector2(0f, 1f);
@@ -166,26 +166,28 @@ public static class CampaignAuthoringTools
         objective.rectTransform.pivot = new Vector2(0f, 1f);
         Anchor(objective.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -52f), new Vector2(360f, 30f));
 
-        Text healthLabel = UIStyleKit.CreateStyledText(hudPanel.transform, "HealthLabel", "SALUD", 16, Color.white);
-        healthLabel.rectTransform.pivot = new Vector2(0f, 1f);
-        Anchor(healthLabel.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -92f), new Vector2(220f, 24f));
+        // Barra de vida con sprites personalizados (BordeBarraVida + BarraVida).
+        Sprite borderSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/WhatTheHell3D/UI/BordeBarraVida.png");
+        Sprite fillSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/WhatTheHell3D/UI/BarraVida.png");
 
-        Image barBackground = CreateImage(hudPanel.transform, "HealthBarBackground", new Color(0.45f, 0.06f, 0.06f));
-        barBackground.sprite = UIStyleKit.RoundedSprite();
-        barBackground.type = Image.Type.Sliced;
+        Image barBackground = CreateImage(hudPanel.transform, "HealthBarBackground", Color.white);
+        barBackground.sprite = borderSprite != null ? borderSprite : UIStyleKit.RoundedSprite();
+        barBackground.type = Image.Type.Simple;
+        barBackground.preserveAspect = true;
         barBackground.rectTransform.pivot = new Vector2(0f, 1f);
-        Anchor(barBackground.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -122f), new Vector2(360f, 18f));
-        Image fill = CreateImage(barBackground.transform, "HealthBarFill", new Color(0.15f, 0.8f, 0.25f));
-        fill.sprite = UIStyleKit.RoundedSprite();
-        fill.type = Image.Type.Sliced;
-        RectTransform fillRect = (RectTransform)fill.transform;
-        fillRect.anchorMin = Vector2.zero;
-        fillRect.anchorMax = Vector2.one;
-        fillRect.offsetMin = new Vector2(3f, 3f);
-        fillRect.offsetMax = new Vector2(-3f, -3f);
+        Anchor(barBackground.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -122f), new Vector2(360f, 201f));
+
+        Image fill = CreateImage(barBackground.transform, "HealthBarFill", Color.white);
+        fill.sprite = fillSprite != null ? fillSprite : UIStyleKit.RoundedSprite();
         fill.type = Image.Type.Filled;
         fill.fillMethod = Image.FillMethod.Horizontal;
         fill.fillOrigin = 0;
+        fill.fillAmount = 1f;
+        RectTransform fillRect = (RectTransform)fill.transform;
+        fillRect.anchorMin = new Vector2(0.123f, 0.328f);
+        fillRect.anchorMax = new Vector2(0.879f, 0.776f);
+        fillRect.offsetMin = Vector2.zero;
+        fillRect.offsetMax = Vector2.zero;
 
         // Panel superior-derecho (monedas, llave, checkpoint).
         GameObject statsPanel = UIStyleKit.CreateBorderedPanel(canvas.transform, "StatsPanel",
@@ -212,7 +214,7 @@ public static class CampaignAuthoringTools
 
         hud.objectiveTitle = objectiveTitle;
         hud.objectiveText = objective;
-        hud.healthLabel = healthLabel;
+        hud.healthLabel = null;
         hud.healthFill = fill;
         hud.coinsLabel = coins;
         hud.keyLabel = key;

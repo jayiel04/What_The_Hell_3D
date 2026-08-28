@@ -6,7 +6,7 @@ public static class SceneDiagnostics
 {
     public static void Diagnose()
     {
-        EditorSceneManager.OpenScene("Assets/WhatTheHell3D/Scenes/CampaignLevel01.unity", OpenSceneMode.Single);
+        EditorSceneManager.OpenScene("Assets/Scenes/CampaignLevel01.unity", OpenSceneMode.Single);
 
         foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {

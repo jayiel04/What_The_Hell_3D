@@ -116,6 +116,15 @@ public sealed class PlayerController : MonoBehaviour
         controller = GetComponent<CharacterController>();
         Health = GetComponent<HealthComponent>();
         input = new InputReader();
+
+        // Rigidbody cinemático necesario para que los triggers (recogidas, metas y
+        // checkpoints) detecten al jugador vía OnTriggerEnter con el CharacterController.
+        if (GetComponent<Rigidbody>() == null)
+        {
+            Rigidbody body = gameObject.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.useGravity = false;
+        }
     }
 
     private void Update()

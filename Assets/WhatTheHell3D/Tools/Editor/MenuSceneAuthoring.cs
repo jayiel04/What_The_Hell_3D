@@ -13,10 +13,10 @@ using UnityEngine.UI;
 /// </summary>
 public static class MenuSceneAuthoring
 {
-    private const string ScenesRoot = "Assets/WhatTheHell3D/Scenes";
+    private const string ScenesRoot = "Assets/Scenes";
     private const string SourceRoot = "Assets/WhatTheHell3D/Art/Source";
     private const string MaterialsRoot = "Assets/WhatTheHell3D/Materials/Menu";
-    private static Font DefaultFont => Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+    private static Font DefaultFont => AssetDatabase.LoadAssetAtPath<Font>("Assets/WhatTheHell3D/UI/Source/MedievalSharp-Regular.ttf");
 
     [MenuItem("WhatTheHell3D/Autoría/Autoría de menú 3D")]
     public static void AuthorMenuScene3DFromMenu()

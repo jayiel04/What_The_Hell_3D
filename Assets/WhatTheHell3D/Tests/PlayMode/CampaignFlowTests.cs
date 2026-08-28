@@ -9,12 +9,12 @@ namespace WhatTheHell3D.Tests
 {
     public sealed class CampaignFlowTests
     {
-        private const string Level01 = "Assets/WhatTheHell3D/Scenes/CampaignLevel01.unity";
+        private const string Level01 = "Assets/Scenes/CampaignLevel01.unity";
 
         [UnityTest]
         public IEnumerator Menu_MundoCargaConLunaEstrellasYCastillo()
         {
-            yield return LoadScene("Assets/WhatTheHell3D/Scenes/MainMenu.unity");
+            yield return LoadScene("Assets/Scenes/MainMenu.unity");
 
             MoonSpinner moon = Object.FindFirstObjectByType<MoonSpinner>();
             Assert.IsNotNull(moon, "La luna NASA debe existir con su componente de rotación.");
@@ -46,7 +46,7 @@ namespace WhatTheHell3D.Tests
         [UnityTest]
         public IEnumerator Menu_PopupsYNavegacionACapitulos()
         {
-            yield return LoadScene("Assets/WhatTheHell3D/Scenes/MainMenu.unity");
+            yield return LoadScene("Assets/Scenes/MainMenu.unity");
             MenuSceneController controller = Object.FindFirstObjectByType<MenuSceneController>();
             Assert.IsNotNull(controller);
 
@@ -191,7 +191,7 @@ namespace WhatTheHell3D.Tests
         [UnityTest]
         public IEnumerator Intro_Cutscene_TimelineAvanzaYModeloCarga()
         {
-            yield return LoadScene("Assets/WhatTheHell3D/Scenes/Intro.unity");
+            yield return LoadScene("Assets/Scenes/Intro.unity");
 
             IntroCutsceneDirector director = Object.FindFirstObjectByType<IntroCutsceneDirector>();
             Assert.IsNotNull(director, "La escena Intro debe contener IntroCutsceneDirector.");
@@ -251,7 +251,7 @@ namespace WhatTheHell3D.Tests
         [UnityTest]
         public IEnumerator Intro_Skip_CargaNivel01()
         {
-            yield return LoadScene("Assets/WhatTheHell3D/Scenes/Intro.unity");
+            yield return LoadScene("Assets/Scenes/Intro.unity");
             yield return null;
 
             IntroCutsceneDirector director = Object.FindFirstObjectByType<IntroCutsceneDirector>();
@@ -319,7 +319,7 @@ namespace WhatTheHell3D.Tests
         [UnityTest]
         public IEnumerator Bruja_LanzaProyectilDuranteAtaque()
         {
-            yield return LoadScene("Assets/WhatTheHell3D/Scenes/CampaignLevel02.unity");
+            yield return LoadScene("Assets/Scenes/CampaignLevel02.unity");
             yield return null;
 
             EnemyController witch = null;
@@ -486,8 +486,8 @@ namespace WhatTheHell3D.Tests
         {
             foreach ((string scenePath, string configPath) in new[]
             {
-                ("Assets/WhatTheHell3D/Scenes/CampaignLevel02.unity", "Assets/WhatTheHell3D/Data/CampaignLevel02_Mines.asset"),
-                ("Assets/WhatTheHell3D/Scenes/CampaignLevel03.unity", "Assets/WhatTheHell3D/Data/CampaignLevel03_Castle.asset")
+                ("Assets/Scenes/CampaignLevel02.unity", "Assets/WhatTheHell3D/Data/CampaignLevel02_Mines.asset"),
+                ("Assets/Scenes/CampaignLevel03.unity", "Assets/WhatTheHell3D/Data/CampaignLevel03_Castle.asset")
             })
             {
                 yield return LoadScene(scenePath);

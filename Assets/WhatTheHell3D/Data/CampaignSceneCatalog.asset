@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a3f9d0e5b2c47c9b6e4f708123d0a55, type: 3}
   m_Name: CampaignSceneCatalog
   m_EditorClassIdentifier:
-  mainMenuScene: Assets/WhatTheHell3D/Scenes/MainMenu.unity
-  introScene: Assets/WhatTheHell3D/Scenes/Intro.unity
+  mainMenuScene: Assets/Scenes/MainMenu.unity
+  introScene: Assets/Scenes/Intro.unity
   campaignLevelScenes:
-  - Assets/WhatTheHell3D/Scenes/CampaignLevel01.unity
-  - Assets/WhatTheHell3D/Scenes/CampaignLevel02.unity
-  - Assets/WhatTheHell3D/Scenes/CampaignLevel03.unity
-  victoryScene: Assets/WhatTheHell3D/Scenes/Victory.unity
+  - Assets/Scenes/CampaignLevel01.unity
+  - Assets/Scenes/CampaignLevel02.unity
+  - Assets/Scenes/CampaignLevel03.unity
+  victoryScene: Assets/Scenes/Victory.unity
