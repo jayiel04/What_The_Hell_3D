@@ -90,3 +90,39 @@
 - Flujo confirmado: triggers disparan → `CampaignRuntimeState.Collect/SetCheckpoint` actualiza
   `Progress` → `CampaignHudController.Update` refresca labels → `GoalRuntime.Finish` (requiere
   `keyCollected`) carga la siguiente escena vía `Catalog.GetNextScene`.
+
+## Última Iteración: Espada del jugador + reorganización de multimedia
+**Fecha**: 27 Agosto 2026
+
+### Solicitud
+- El jugador debe tener una espada (la del proyecto Godot; el `Sword.fbx` ya existe en
+  `Assets/WhatTheHell3D/Art/Source/rpg_items/weapons/Sword.fbx` e idéntico al de Godot por md5).
+- Mover los archivos de la carpeta `Assets/integrar` a una carpeta de recursos multimedia organizada.
+
+### Cambios: espada
+- `CampaignLevelSceneBuilder.cs` (`CreatePlayer`): instancia `Sword.fbx` como hijo "Sword" del jugador
+  al reconstruir escenas. También se añadió `EnsureSwordResource()` (MenuItem + ejecutable por batch)
+  que crea `Assets/WhatTheHell3D/Resources/Sword.prefab` a partir del FBX.
+- `PlayerController.cs`:
+  - `Awake` → `EnsureSwordChild()`: si la escena no tiene hijo "Sword", lo crea desde
+    `Resources.Load<GameObject>("Sword")` (cubre escenas existentes sin reconstruir).
+  - `LoadCharacterModel` → `AttachSwordToHand(modelRoot)`: reparenta "Sword" al hueso de la
+    mano derecha (`LowerArm.R`, con candidatos alternos) para que siga la animación del brazo.
+    Fallback: lo coloca a la altura del pecho si no encuentra el hueso.
+
+### Cambios: reorganización multimedia
+- Creada `Assets/WhatTheHell3D/Media/UI/`.
+- Movidos (git mv, preserva GUIDs): `BarraVida.png`, `BordeBarraVida.png`, `TablaPuntaje2.png`
+  (+ .meta) desde `Assets/integrar/` a `Assets/WhatTheHell3D/Media/UI/`.
+- Eliminada la carpeta `Assets/integrar` (quedó vacía).
+
+### Notas / pendiente de ajuste visual
+- **Bug corregido (espada invisible)**: el `Sword.fbx` tiene escala de raíz (100,100,100) porque está
+  modelado en cm; la espada mide ~2.3u. El código forzaba `localScale = Vector3.one`, reduciéndola
+  ~100x (~5mm) y volviéndola invisible. Se eliminaron esos overrides en `PlayerController.AttachSwordToHand`
+  y en `CreatePlayer` (builder); ahora se conserva la escala natural del FBX.
+- La posición/rotación local de la espada en el hueso (`localPosition (0,0,0)`, rotación identity)
+  es un valor provisional: requiere ajuste visual en el editor (la empuñadura debe coincidir con la mano).
+- `Resources/Sword.prefab` se incluye en el build (necesario para cargar la espada en runtime).
+- `Assets/WhatTheHell3D/UI/` conserva copias activas de BarraVida/BordeBarraVida usadas por las escenas;
+  `Media/UI/` guarda ahora los recursos originales de `integrar`.

@@ -125,6 +125,27 @@ public sealed class PlayerController : MonoBehaviour
             body.isKinematic = true;
             body.useGravity = false;
         }
+
+        // Asegura que el jugador tenga la espada (la crea desde Resources si la escena
+        // no fue reconstruida con el builder). AttachSwordToHand la coloca en la mano.
+        EnsureSwordChild();
+    }
+
+    private void EnsureSwordChild()
+    {
+        if (transform.Find("Sword") != null)
+        {
+            return;
+        }
+
+        GameObject prefab = Resources.Load<GameObject>("Sword");
+        if (prefab == null)
+        {
+            return;
+        }
+
+        GameObject sword = Instantiate(prefab, transform);
+        sword.name = "Sword";
     }
 
     private void Update()
@@ -477,6 +498,8 @@ public sealed class PlayerController : MonoBehaviour
 
         modelLoaded = true;
 
+        AttachSwordToHand(modelRoot);
+
         Transform placeholder = transform.Find("PlayerCapsule");
         if (placeholder != null)
         {
@@ -486,6 +509,54 @@ public sealed class PlayerController : MonoBehaviour
                 mr.enabled = false;
             }
         }
+    }
+
+    private void AttachSwordToHand(Transform modelRoot)
+    {
+        Transform sword = transform.Find("Sword");
+        if (sword == null)
+        {
+            return;
+        }
+
+        string[] candidates = { "LowerArm.R", "Hand.R", "RightHand", "mixamorig:RightHand", "RightArm" };
+        Transform handBone = null;
+        foreach (string candidate in candidates)
+        {
+            handBone = FindBone(modelRoot, candidate);
+            if (handBone != null)
+            {
+                break;
+            }
+        }
+
+        if (handBone != null)
+        {
+            sword.SetParent(handBone, false);
+            sword.localPosition = new Vector3(0f, 0f, 0f);
+            sword.localRotation = Quaternion.identity;
+            // Se conserva la escala natural del FBX (raíz ~100) para que la espada
+            // mida ~2.3u; no sobreescribir localScale (la volvería invisible).
+        }
+        else
+        {
+            // Fallback: cerca de la mano derecha a la altura del pecho.
+            sword.SetParent(transform, false);
+            sword.localPosition = new Vector3(0.45f, 1.0f, 0.15f);
+            sword.localRotation = Quaternion.identity;
+        }
+    }
+
+    private static Transform FindBone(Transform root, string name)
+    {
+        foreach (Transform bone in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (bone.name == name)
+            {
+                return bone;
+            }
+        }
+        return null;
     }
 
     private void CreatePlaceholder()

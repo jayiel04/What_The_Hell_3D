@@ -148,7 +148,58 @@ public static class CampaignLevelSceneBuilder
         body.isKinematic = true;
         body.useGravity = false;
 
+        // Espada del jugador (modelo Sword.fbx, idéntico al del proyecto Godot).
+        // Se crea como hija del jugador y en runtime se reparenta al hueso de la
+        // mano derecha en PlayerController.LoadCharacterModel.
+        const string swordPath = "Assets/WhatTheHell3D/Art/Source/rpg_items/weapons/Sword.fbx";
+        GameObject swordAsset = AssetDatabase.LoadAssetAtPath<GameObject>(swordPath);
+        if (swordAsset != null)
+        {
+            GameObject sword = (GameObject)PrefabUtility.InstantiatePrefab(swordAsset);
+            sword.name = "Sword";
+            sword.transform.SetParent(playerObject.transform, false);
+            sword.transform.localPosition = Vector3.zero;
+            sword.transform.localRotation = Quaternion.identity;
+            // Se conserva la escala natural del FBX (~100) para que la espada sea visible.
+        }
+        else
+        {
+            Debug.LogWarning($"[Builder] No se encontró la espada en {swordPath}");
+        }
+
         return playerObject.AddComponent<PlayerController>();
+    }
+
+    [MenuItem("WhatTheHell3D/Autoría/Crear Sword.prefab en Resources")]
+    public static void EnsureSwordResource()
+    {
+        const string fbxPath = "Assets/WhatTheHell3D/Art/Source/rpg_items/weapons/Sword.fbx";
+        const string resourcesDir = "Assets/WhatTheHell3D/Resources";
+        const string prefabPath = "Assets/WhatTheHell3D/Resources/Sword.prefab";
+
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null)
+        {
+            Debug.Log("[Builder] Sword.prefab ya existe en Resources.");
+            return;
+        }
+
+        if (!AssetDatabase.IsValidFolder(resourcesDir))
+        {
+            AssetDatabase.CreateFolder("Assets/WhatTheHell3D", "Resources");
+        }
+
+        GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+        if (source == null)
+        {
+            Debug.LogError($"[Builder] No se encontró la espada en {fbxPath}");
+            return;
+        }
+
+        GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
+        PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
+        Object.DestroyImmediate(instance);
+        AssetDatabase.Refresh();
+        Debug.Log("[Builder] Sword.prefab creado en Resources.");
     }
 
     private static CameraController CreateCamera(Transform target)
